@@ -6,8 +6,8 @@ use hound::{SampleFormat, WavSpec, WavWriter};
 
 #[derive(Debug, Clone)]
 pub struct Audio {
-    samples: Vec<f32>,
-    sample_rate: u32,
+    pub samples: Vec<f32>,
+    pub sample_rate: u32,
 }
 
 #[derive(Debug)]
