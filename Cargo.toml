@@ -9,6 +9,6 @@ edition = "2021"
 [dependencies]
 hound = "3.5.0"
 anyhow = "1.0.65"
-flexblock-synth = { path="../flexblocksynth" }
+flexblock-synth = { git="https://gitlab.com/albertsgarde/flexblocksynth" }
 rand = "0.8.5"
 rand_pcg = "0.3.1"
