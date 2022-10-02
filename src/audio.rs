@@ -4,6 +4,7 @@ use anyhow::{Context, Ok, Result};
 use flexblock_synth::modules::{Module, ModuleTemplate};
 use hound::{SampleFormat, WavSpec, WavWriter};
 
+#[derive(Debug, Clone)]
 pub struct Audio {
     samples: Vec<f32>,
     sample_rate: u32,
