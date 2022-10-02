@@ -49,7 +49,7 @@ pub struct DataPoint {
 
 impl DataPoint {
     pub fn new(params: DataPointParameters, _seed: u64) -> Result<Self, AudioGenerationError> {
-        let synth = SineOscillator::new(params.frequency, params.sample_rate) * 2.;
+        let synth = SineOscillator::new(params.frequency, params.sample_rate);
         let audio = Audio::samples_from_module(&synth, params.sample_rate, params.num_samples)?;
         Ok(Self {
             audio,
