@@ -17,13 +17,13 @@ const MIN_FREQUENCY: f32 = 20.0;
 const MAX_FREQUENCY: f32 = 20000.0;
 
 fn main() -> Result<()> {
-    let data_params = DataParameters {
-        sample_rate: SAMPLE_RATE,
-        frequency_range: (MIN_FREQUENCY, MAX_FREQUENCY),
-        num_samples: DATA_POINT_SAMPLES,
-    };
+    let data_parameters = DataParameters::new(
+        SAMPLE_RATE,
+        (MIN_FREQUENCY, MAX_FREQUENCY),
+        DATA_POINT_SAMPLES,
+    );
 
-    let mut data_generator = DataGenerator::new(data_params, SEED);
+    let mut data_generator = DataGenerator::new(data_parameters, SEED);
 
     for i in 0..10 {
         let data_point = data_generator.next().unwrap().unwrap();

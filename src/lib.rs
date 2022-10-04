@@ -1,18 +1,29 @@
 mod audio;
+mod log_uniform;
 pub use audio::Audio;
 use audio::AudioGenerationError;
+use log_uniform::LogUniform;
+
 use flexblock_synth::modules::SineOscillator;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 
 #[derive(Debug, Clone)]
 pub struct DataParameters {
-    pub sample_rate: u32,
-    pub frequency_range: (f32, f32),
-    pub num_samples: u64,
+    sample_rate: u32,
+    frequency: LogUniform,
+    num_samples: u64,
 }
 
 impl DataParameters {
+    pub fn new(sample_rate: u32, frequency_range: (f32, f32), num_samples: u64) -> Self {
+        Self {
+            sample_rate,
+            frequency: LogUniform::from_tuple(frequency_range),
+            num_samples,
+        }
+    }
+
     fn generate(&self, rng: &mut impl Rng) -> DataPointParameters {
         DataPointParameters::new(self, rng)
     }
@@ -28,12 +39,7 @@ pub struct DataPointParameters {
 
 impl DataPointParameters {
     fn new(data_parameters: &DataParameters, rng: &mut impl Rng) -> Self {
-        let frequency_map = rng.gen_range(-1.0..=1.0);
-        let frequency_range = data_parameters.frequency_range;
-        let frequency = ((frequency_range.1.ln() - frequency_range.0.ln()) * (frequency_map + 1.)
-            / 2.
-            + frequency_range.0.ln())
-        .exp();
+        let (frequency_map, frequency) = data_parameters.frequency.sample_with_map(rng);
 
         Self {
             sample_rate: data_parameters.sample_rate,
