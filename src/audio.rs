@@ -39,13 +39,13 @@ impl Audio {
     {
         assert!(sample_rate != 0);
         let mut module = module.create_instance();
-        let mut samples = vec![0.; num_samples as usize];
-        for (sample_num, sample_ref) in samples.iter_mut().enumerate() {
+        let mut samples = Vec::with_capacity(num_samples as usize);
+        for sample_num in 0..samples.len() {
             let sample = module.next(sample_num as u64);
             if sample.abs() > 1. {
                 return Err(AudioGenerationError::Clipping(sample_num as u64));
             }
-            *sample_ref = sample;
+            samples.push(sample)
         }
         Result::Ok(Self {
             samples,

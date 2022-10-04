@@ -5,6 +5,7 @@ use flexblock_synth::modules::SineOscillator;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 
+#[derive(Debug, Clone)]
 pub struct DataParameters {
     pub sample_rate: u32,
     pub frequency_range: (f32, f32),
@@ -17,6 +18,7 @@ impl DataParameters {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct DataPointParameters {
     pub sample_rate: u32,
     pub frequency_map: f32,
@@ -42,6 +44,7 @@ impl DataPointParameters {
     }
 }
 
+#[derive(Clone)]
 pub struct DataPoint {
     pub audio: Audio,
     pub label: DataPointParameters,
