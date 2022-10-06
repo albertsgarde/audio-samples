@@ -40,7 +40,7 @@ impl Audio {
         assert!(sample_rate != 0);
         let mut module = module.create_instance();
         let mut samples = Vec::with_capacity(num_samples as usize);
-        for sample_num in 0..samples.len() {
+        for sample_num in 0..num_samples {
             let sample = module.next(sample_num as u64);
             if sample.abs() > 1. {
                 return Err(AudioGenerationError::Clipping(sample_num as u64));
