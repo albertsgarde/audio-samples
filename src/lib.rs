@@ -141,7 +141,7 @@ impl DataParameters {
     }
 
     pub fn generate(&self, index: u64) -> DataPointParameters {
-        let seed = hash(index) + self.seed_offset;
+        let seed = hash(index).wrapping_add(self.seed_offset);
         DataPointParameters::new(self, seed)
     }
 }
