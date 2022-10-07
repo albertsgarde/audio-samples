@@ -1,6 +1,11 @@
 mod audio;
 pub mod effects;
 mod log_uniform;
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
+
 pub use audio::Audio;
 use audio::AudioGenerationError;
 use log_uniform::LogUniform;
@@ -11,6 +16,12 @@ use flexblock_synth::modules::{
 };
 use rand::{distributions::Uniform, prelude::Distribution, Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
+
+fn hash(x: u64) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    x.hash(&mut hasher);
+    hasher.finish()
+}
 
 #[derive(Debug, Clone)]
 pub enum OscillatorTypeDistribution {
@@ -80,15 +91,22 @@ pub struct DataParameters {
     frequency_distribution: LogUniform,
     oscillators: Vec<OscillatorDistribution>,
     num_samples: u64,
+    seed_offset: u64,
 }
 
 impl DataParameters {
-    pub fn new(sample_rate: u32, frequency_range: (f32, f32), num_samples: u64) -> Self {
+    pub fn new(
+        sample_rate: u32,
+        frequency_range: (f32, f32),
+        num_samples: u64,
+        seed_offset: u64,
+    ) -> Self {
         Self {
             sample_rate,
             frequency_distribution: LogUniform::from_tuple(frequency_range),
             oscillators: vec![],
             num_samples,
+            seed_offset: hash(seed_offset),
         }
     }
 
@@ -122,8 +140,9 @@ impl DataParameters {
         self
     }
 
-    fn generate(&self, rng: &mut impl Rng) -> DataPointParameters {
-        DataPointParameters::new(self, rng)
+    pub fn generate(&self, index: u64) -> DataPointParameters {
+        let seed = hash(index) + self.seed_offset;
+        DataPointParameters::new(self, seed)
     }
 }
 
@@ -169,9 +188,11 @@ pub struct DataPointParameters {
 }
 
 impl DataPointParameters {
-    fn new(data_parameters: &DataParameters, rng: &mut impl Rng) -> Self {
-        let (frequency_map, frequency) =
-            data_parameters.frequency_distribution.sample_with_map(rng);
+    fn new(data_parameters: &DataParameters, seed: u64) -> Self {
+        let mut rng = Pcg64Mcg::seed_from_u64(seed);
+        let (frequency_map, frequency) = data_parameters
+            .frequency_distribution
+            .sample_with_map(&mut rng);
 
         Self {
             sample_rate: data_parameters.sample_rate,
@@ -180,10 +201,14 @@ impl DataPointParameters {
             oscillators: data_parameters
                 .oscillators
                 .iter()
-                .map(|oscillator_distribution| oscillator_distribution.sample(rng))
+                .map(|oscillator_distribution| oscillator_distribution.sample(&mut rng))
                 .collect(),
             num_samples: data_parameters.num_samples,
         }
+    }
+
+    pub fn generate(self) -> Result<DataPoint, AudioGenerationError> {
+        DataPoint::new(self)
     }
 }
 
@@ -194,7 +219,7 @@ pub struct DataPoint {
 }
 
 impl DataPoint {
-    pub fn new(params: DataPointParameters, _seed: u64) -> Result<Self, AudioGenerationError> {
+    pub fn new(params: DataPointParameters) -> Result<Self, AudioGenerationError> {
         let mut oscillators = vec![];
         for oscillator in params.oscillators.iter() {
             let oscillator = oscillator.create_oscillator(params.frequency, params.sample_rate)
@@ -222,15 +247,13 @@ impl DataPoint {
 
 pub struct DataGenerator {
     data_parameters: DataParameters,
-    rng: Pcg64Mcg,
     data_point_num: u64,
 }
 
 impl DataGenerator {
-    pub fn new(data_parameters: DataParameters, seed: u64) -> Self {
+    pub fn new(data_parameters: DataParameters) -> Self {
         Self {
             data_parameters,
-            rng: Pcg64Mcg::seed_from_u64(seed),
             data_point_num: 0,
         }
     }
@@ -240,8 +263,10 @@ impl Iterator for DataGenerator {
     type Item = Result<DataPoint, AudioGenerationError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let params = self.data_parameters.generate(&mut self.rng);
-        let data_point = DataPoint::new(params, self.rng.gen());
+        let data_point = self
+            .data_parameters
+            .generate(self.data_point_num)
+            .generate();
         self.data_point_num += 1;
         Some(data_point)
     }

@@ -23,6 +23,7 @@ fn main() -> Result<()> {
         SAMPLE_RATE,
         (MIN_FREQUENCY, MAX_FREQUENCY),
         DATA_POINT_LENGTH,
+        0,
     )
     .with_oscillator(OscillatorTypeDistribution::Sine, (0.0, 0.4))
     .with_oscillator(OscillatorTypeDistribution::Saw, (0.00, 0.15))
@@ -32,7 +33,7 @@ fn main() -> Result<()> {
     )
     .with_oscillator(OscillatorTypeDistribution::Noise, (0., 0.25));
 
-    let generator = DataGenerator::new(parameters, SEED);
+    let generator = DataGenerator::new(parameters);
 
     for (i, data_point) in generator.take(30).enumerate() {
         let file_path = format!("output/{i}.wav");
