@@ -12,7 +12,7 @@ use rand_pcg::Pcg64Mcg;
 #[derive(Debug, Clone)]
 pub struct DataParameters {
     sample_rate: u32,
-    frequency: LogUniform,
+    frequency_distribution: LogUniform,
     num_samples: u64,
 }
 
@@ -20,9 +20,17 @@ impl DataParameters {
     pub fn new(sample_rate: u32, frequency_range: (f32, f32), num_samples: u64) -> Self {
         Self {
             sample_rate,
-            frequency: LogUniform::from_tuple(frequency_range),
+            frequency_distribution: LogUniform::from_tuple(frequency_range),
             num_samples,
         }
+    }
+
+    pub fn frequency_to_map(&self, frequency: f32) -> f32 {
+        self.frequency_distribution.frequency_to_map(frequency)
+    }
+
+    pub fn map_to_frequency(&self, map: f32) -> f32 {
+        self.frequency_distribution.map_to_frequency(map)
     }
 
     fn generate(&self, rng: &mut impl Rng) -> DataPointParameters {
@@ -40,7 +48,8 @@ pub struct DataPointParameters {
 
 impl DataPointParameters {
     fn new(data_parameters: &DataParameters, rng: &mut impl Rng) -> Self {
-        let (frequency_map, frequency) = data_parameters.frequency.sample_with_map(rng);
+        let (frequency_map, frequency) =
+            data_parameters.frequency_distribution.sample_with_map(rng);
 
         Self {
             sample_rate: data_parameters.sample_rate,

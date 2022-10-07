@@ -14,8 +14,12 @@ impl LogUniform {
         }
     }
 
-    pub fn sample_from_map(&self, map: f32) -> f32 {
+    pub fn map_to_frequency(&self, map: f32) -> f32 {
         ((self.max.ln() - self.min.ln()) * (map + 1.) / 2. + self.min.ln()).exp()
+    }
+
+    pub fn frequency_to_map(&self, frequency: f32) -> f32 {
+        (frequency.ln() - self.min.ln()) / (self.max.ln() - self.min.ln()) * 2. - 1.
     }
 
     /// Returns a tuple `(map, sample)` where `map` is uniformly distributed in `[-1.;1.]` while `sample` is the mapping from `map` onto the distribution's domain.
@@ -24,7 +28,7 @@ impl LogUniform {
         R: Rng + ?Sized,
     {
         let map = rng.gen_range(-1. ..=1.);
-        (map, self.sample_from_map(map))
+        (map, self.map_to_frequency(map))
     }
 }
 
