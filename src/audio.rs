@@ -1,8 +1,18 @@
-use std::{fs::File, io::Write, path::Path};
+use std::{
+    error::Error,
+    fmt::{Display, Formatter},
+    fs::File,
+    io::Write,
+    path::Path,
+};
 
 use anyhow::{Context, Ok, Result};
 use flexblock_synth::modules::{Module, ModuleTemplate};
 use hound::{SampleFormat, WavSpec, WavWriter};
+use rustfft::{
+    num_complex::{Complex, Complex32},
+    FftPlanner,
+};
 
 #[derive(Debug, Clone)]
 pub struct Audio {
@@ -14,6 +24,19 @@ pub struct Audio {
 pub enum AudioGenerationError {
     Clipping(u64),
 }
+
+impl Display for AudioGenerationError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Clipping(sample_index) => write!(
+                f,
+                "Audio generation failed due to clipping at sample {sample_index}.",
+            ),
+        }
+    }
+}
+
+impl Error for AudioGenerationError {}
 
 impl Audio {
     pub fn from_module<M>(
@@ -51,6 +74,38 @@ impl Audio {
             samples,
             sample_rate,
         })
+    }
+
+    pub fn from_spectrum<A>(spectrum: A, sample_rate: u32) -> Self
+    where
+        A: AsRef<[Complex32]>,
+    {
+        let mut spectrum = spectrum.as_ref().to_vec();
+        let mut planner = FftPlanner::new();
+        let fft = planner.plan_fft_inverse(spectrum.len());
+        fft.process(&mut spectrum);
+        let num_samples = spectrum.len();
+        let samples = spectrum
+            .into_iter()
+            .map(|c| c.re / num_samples as f32)
+            .collect();
+        Self {
+            samples,
+            sample_rate,
+        }
+    }
+
+    pub fn num_samples(&self) -> usize {
+        self.samples.len()
+    }
+
+    pub fn fft(&self) -> Vec<Complex32> {
+        let mut planner = FftPlanner::new();
+        let fft = planner.plan_fft_forward(self.num_samples());
+
+        let mut buffer: Vec<_> = self.samples.iter().map(|&x| Complex::new(x, 0.)).collect();
+        fft.process(&mut buffer);
+        buffer
     }
 
     pub fn to_wav<P>(&self, file_path: P) -> Result<()>

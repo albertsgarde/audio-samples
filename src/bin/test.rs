@@ -2,7 +2,7 @@
 use std::path::Path;
 
 use anyhow::Result;
-use audio_samples::{Audio, DataGenerator, DataParameters};
+use audio_samples::{Audio, DataGenerator, DataParameters, DataPointParameters};
 use flexblock_synth::modules::{
     lowpass_filter, ConvolutionFilter, Envelope, Module, ModuleTemplate, PulseOscillator,
     SawOscillator, SineOscillator, TriangleOscillator,
@@ -17,18 +17,13 @@ const MIN_FREQUENCY: f32 = 20.0;
 const MAX_FREQUENCY: f32 = 20000.0;
 
 fn main() -> Result<()> {
-    let data_parameters = DataParameters::new(
-        SAMPLE_RATE,
-        (MIN_FREQUENCY, MAX_FREQUENCY),
-        DATA_POINT_SAMPLES,
-    );
+    let synth = SawOscillator::new(440.0, SAMPLE_RATE);
 
-    let mut data_generator = DataGenerator::new(data_parameters, SEED);
+    let audio = Audio::from_module(&synth, SAMPLE_RATE, 1.)?;
 
-    for i in 0..10 {
-        let data_point = data_generator.next().unwrap().unwrap();
-        let file_path = format!("output/data_point_{}.wav", i);
-        data_point.audio().to_wav(file_path)?;
-    }
+    let audio = audio_samples::effects::low_pass(&audio, 1000.);
+
+    let file_path = "test.wav";
+    audio.to_wav(file_path)?;
     Ok(())
 }

@@ -1,4 +1,5 @@
 mod audio;
+pub mod effects;
 mod log_uniform;
 pub use audio::Audio;
 use audio::AudioGenerationError;
