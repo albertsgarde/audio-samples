@@ -95,18 +95,13 @@ pub struct DataParameters {
 }
 
 impl DataParameters {
-    pub fn new(
-        sample_rate: u32,
-        frequency_range: (f32, f32),
-        num_samples: u64,
-        seed_offset: u64,
-    ) -> Self {
+    pub fn new(sample_rate: u32, frequency_range: (f32, f32), num_samples: u64) -> Self {
         Self {
             sample_rate,
             frequency_distribution: LogUniform::from_tuple(frequency_range),
             oscillators: vec![],
             num_samples,
-            seed_offset: hash(seed_offset),
+            seed_offset: hash(0),
         }
     }
 
@@ -116,6 +111,11 @@ impl DataParameters {
 
     pub fn map_to_frequency(&self, map: f32) -> f32 {
         self.frequency_distribution.unmap(map)
+    }
+
+    pub fn with_seed_offset(mut self, seed_offset: u64) -> Self {
+        self.seed_offset = hash(seed_offset);
+        self
     }
 
     pub fn with_oscillator(

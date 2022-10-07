@@ -23,7 +23,6 @@ fn main() -> Result<()> {
         SAMPLE_RATE,
         (MIN_FREQUENCY, MAX_FREQUENCY),
         DATA_POINT_LENGTH,
-        0,
     )
     .with_oscillator(OscillatorTypeDistribution::Sine, (0.0, 0.4))
     .with_oscillator(OscillatorTypeDistribution::Saw, (0.00, 0.15))
