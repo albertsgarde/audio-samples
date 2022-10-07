@@ -7,19 +7,37 @@ pub struct LogUniform {
 }
 
 impl LogUniform {
-    pub fn from_tuple(range: (f32, f32)) -> Self {
+    pub fn from_tuple(mut range: (f32, f32)) -> Self {
+        assert!(range.0 >= 0.0, "Range must be non-negative.");
+        if range.0 == 0.0 {
+            range.0 = 1e-6;
+        }
+        assert!(range.1 >= range.0);
         Self {
             min: range.0,
             max: range.1,
         }
     }
 
-    pub fn map_to_frequency(&self, map: f32) -> f32 {
-        ((self.max.ln() - self.min.ln()) * (map + 1.) / 2. + self.min.ln()).exp()
+    pub fn max(&self) -> f32 {
+        self.max
     }
 
-    pub fn frequency_to_map(&self, frequency: f32) -> f32 {
+    pub fn min(&self) -> f32 {
+        self.min
+    }
+
+    pub fn map_value(&self, frequency: f32) -> f32 {
+        assert_ne!(self.min, self.max, "Cannot map a range of 0.");
         (frequency.ln() - self.min.ln()) / (self.max.ln() - self.min.ln()) * 2. - 1.
+    }
+
+    pub fn unmap(&self, map: f32) -> f32 {
+        if self.min == self.max {
+            self.min
+        } else {
+            ((self.max.ln() - self.min.ln()) * (map + 1.) / 2. + self.min.ln()).exp()
+        }
     }
 
     /// Returns a tuple `(map, sample)` where `map` is uniformly distributed in `[-1.;1.]` while `sample` is the mapping from `map` onto the distribution's domain.
@@ -28,7 +46,7 @@ impl LogUniform {
         R: Rng + ?Sized,
     {
         let map = rng.gen_range(-1. ..=1.);
-        (map, self.map_to_frequency(map))
+        (map, self.unmap(map))
     }
 }
 
