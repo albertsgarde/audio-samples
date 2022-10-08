@@ -101,7 +101,7 @@ impl DataParameters {
             frequency_distribution: LogUniform::from_tuple(frequency_range),
             oscillators: vec![],
             num_samples,
-            seed_offset: hash(0),
+            seed_offset: hash(hash(0)),
         }
     }
 
@@ -114,7 +114,7 @@ impl DataParameters {
     }
 
     pub fn with_seed_offset(mut self, seed_offset: u64) -> Self {
-        self.seed_offset = hash(seed_offset);
+        self.seed_offset = hash(hash(seed_offset));
         self
     }
 
@@ -142,10 +142,6 @@ impl DataParameters {
 
     pub fn generate(&self, index: u64) -> DataPointParameters {
         let seed = hash(index).wrapping_add(self.seed_offset);
-        println!(
-            "index: {index}  seed_offset: {}  seed: {seed}",
-            self.seed_offset
-        );
         DataPointParameters::new(self, seed)
     }
 }
