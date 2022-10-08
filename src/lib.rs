@@ -23,6 +23,10 @@ fn hash(x: u64) -> u64 {
     hasher.finish()
 }
 
+fn cent_diff(freq1: f32, freq2: f32) -> f32 {
+    1200.0 * (freq1 / freq2).log2()
+}
+
 #[derive(Debug, Clone)]
 pub enum OscillatorTypeDistribution {
     Sine,
