@@ -3,7 +3,9 @@ use std::path::Path;
 
 use anyhow::Result;
 use audio_samples::{
-    Audio, DataGenerator, DataParameters, DataPointParameters, OscillatorTypeDistribution,
+    data::DataGenerator,
+    parameters::{oscillators::OscillatorTypeDistribution, DataParameters, DataPointParameters},
+    Audio,
 };
 use flexblock_synth::modules::{
     lowpass_filter, ConvolutionFilter, Envelope, Module, ModuleTemplate, PulseOscillator,
