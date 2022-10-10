@@ -11,11 +11,14 @@ use crate::{
     },
 };
 
+use super::effects::{EffectDistribution, EffectParameters};
+
 #[derive(Debug, Clone)]
 pub struct DataParameters {
     sample_rate: u32,
     frequency_distribution: LogUniform,
     oscillators: Vec<OscillatorDistribution>,
+    effects: Vec<EffectDistribution>,
     num_samples: u64,
     seed_offset: u64,
 }
@@ -26,6 +29,7 @@ impl DataParameters {
             sample_rate,
             frequency_distribution: LogUniform::from_tuple(frequency_range),
             oscillators: vec![],
+            effects: vec![],
             num_samples,
             seed_offset: hash(hash(0)),
         }
@@ -66,6 +70,11 @@ impl DataParameters {
         self
     }
 
+    pub fn with_effect(mut self, effect_distribution: EffectDistribution) -> Self {
+        self.effects.push(effect_distribution);
+        self
+    }
+
     pub fn generate(&self, index: u64) -> DataPointParameters {
         let seed = hash(index).wrapping_add(self.seed_offset);
         DataPointParameters::new(self, seed)
@@ -78,6 +87,7 @@ pub struct DataPointParameters {
     pub frequency_map: f32,
     pub frequency: f32,
     pub oscillators: Vec<OscillatorParameters>,
+    pub effects: Vec<EffectParameters>,
     pub num_samples: u64,
 }
 
@@ -96,6 +106,11 @@ impl DataPointParameters {
                 .oscillators
                 .iter()
                 .map(|oscillator_distribution| oscillator_distribution.sample(&mut rng))
+                .collect(),
+            effects: data_parameters
+                .effects
+                .iter()
+                .map(|effect_distribution| effect_distribution.sample(&mut rng))
                 .collect(),
             num_samples: data_parameters.num_samples,
         }

@@ -22,7 +22,17 @@ impl DataPoint {
             oscillators.push(oscillator_module);
         }
 
-        let synth = Sum::new(oscillators);
+        let total_amplitude = params
+            .oscillators
+            .iter()
+            .map(|oscillator_params| oscillator_params.amplitude())
+            .sum::<f32>();
+
+        let mut synth = Sum::new(oscillators).boxed();
+
+        for effect in params.effects.iter() {
+            synth = effect.apply_effect(synth, total_amplitude).boxed();
+        }
 
         let audio = Audio::samples_from_module(&synth, params.sample_rate, params.num_samples)?;
         Ok(Self {
