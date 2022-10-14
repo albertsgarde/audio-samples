@@ -8,7 +8,7 @@ use std::{
 
 use anyhow::{Context, Ok, Result};
 use flexblock_synth::modules::{Module, ModuleTemplate};
-use hound::{SampleFormat, WavSpec, WavWriter};
+use hound::{SampleFormat, WavReader, WavSpec, WavWriter};
 use rustfft::{
     num_complex::{Complex, Complex32},
     FftPlanner,
@@ -37,6 +37,34 @@ impl Display for AudioGenerationError {
 }
 
 impl Error for AudioGenerationError {}
+
+#[derive(Debug)]
+pub enum UnsupportedWavSpec {
+    Channels(u16),
+    BitDepth(u16),
+    SampleFormat(SampleFormat),
+}
+
+impl Display for UnsupportedWavSpec {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Channels(channels) => write!(
+                f,
+                "Unsupported number of channels {channels}. Only mono is supported.",
+            ),
+            Self::BitDepth(bit_depth) => write!(
+                f,
+                "Unsupported bit depth {bit_depth}. Only 32-bit float is supported.",
+            ),
+            Self::SampleFormat(sample_format) => write!(
+                f,
+                "Unsupported sample format {sample_format:?}. Only 32-bit float is supported.",
+            ),
+        }
+    }
+}
+
+impl Error for UnsupportedWavSpec {}
 
 impl Audio {
     pub fn from_module<M>(
@@ -129,6 +157,27 @@ impl Audio {
                 .context("Failed to write sample.")?;
         }
         Ok(())
+    }
+
+    pub fn from_wav<P>(file_path: P) -> Result<Self>
+    where
+        P: AsRef<Path>,
+    {
+        let mut reader = WavReader::open(file_path)?;
+        let spec = reader.spec();
+        if spec.channels != 1 {
+            Err(UnsupportedWavSpec::Channels(spec.channels).into())
+        } else if spec.bits_per_sample != 32 {
+            Err(UnsupportedWavSpec::BitDepth(spec.bits_per_sample).into())
+        } else if spec.sample_format != SampleFormat::Float {
+            Err(UnsupportedWavSpec::SampleFormat(spec.sample_format).into())
+        } else {
+            let samples = reader.samples::<f32>().map(|s| s.unwrap()).collect();
+            Ok(Self {
+                samples,
+                sample_rate: spec.sample_rate,
+            })
+        }
     }
 
     pub fn to_csv<P>(&self, file_path: P) -> Result<()>
