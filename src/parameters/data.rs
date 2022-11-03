@@ -13,6 +13,9 @@ use crate::{
 
 use super::effects::{EffectDistribution, EffectParameters};
 
+const A4_FREQUENCY: f32 = 440.0;
+const A4_NOTE_NUMBER: f32 = 69.0;
+
 #[derive(Debug, Clone)]
 pub struct DataParameters {
     sample_rate: u32,
@@ -41,6 +44,20 @@ impl DataParameters {
 
     pub fn map_to_frequency(&self, map: f32) -> f32 {
         self.frequency_distribution.unmap(map)
+    }
+
+    fn note_number_per_map(&self) -> f32 {
+        (self.frequency_distribution.max() / self.frequency_distribution.min()).log2() * 12. * 0.5
+    }
+
+    pub fn map_to_note_number(&self, map: f32) -> f32 {
+        let a4_map = self.frequency_to_map(A4_FREQUENCY);
+        A4_NOTE_NUMBER + (map - a4_map) * self.note_number_per_map()
+    }
+
+    pub fn note_number_to_map(&self, note_number: f32) -> f32 {
+        let a4_map = self.frequency_to_map(A4_FREQUENCY);
+        a4_map + (note_number - A4_NOTE_NUMBER) / self.note_number_per_map()
     }
 
     pub fn with_seed_offset(mut self, seed_offset: u64) -> Self {
@@ -118,5 +135,25 @@ impl DataPointParameters {
 
     pub fn generate(self) -> Result<DataPoint, AudioGenerationError> {
         DataPoint::new(self)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn map_to_note_number() {
+        let data_parameters = DataParameters::new(44100, (20., 20000.), 1000);
+        let cases = vec![(80., 830.61), (60., 261.63), (40., 82.41), (20., 25.96)];
+        for (note_number, frequency) in cases {
+            let map = data_parameters.note_number_to_map(note_number);
+            let frequency_from_map = data_parameters.map_to_frequency(map);
+            assert!((frequency_from_map - frequency).abs() < 0.01, "Note number: {note_number}  Frequency: {frequency}  Map: {map}  Frequency from map: {frequency_from_map}");
+
+            let map = data_parameters.frequency_to_map(frequency);
+            let note_number_from_map = data_parameters.map_to_note_number(map);
+            assert!((note_number_from_map - note_number).abs() < 0.01, "Note number: {note_number}  Frequency: {frequency}  Map: {map}  Note number from map: {note_number_from_map}");
+        }
     }
 }

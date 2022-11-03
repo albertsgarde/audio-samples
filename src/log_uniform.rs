@@ -23,6 +23,10 @@ impl LogUniform {
         self.max
     }
 
+    pub fn min(&self) -> f32 {
+        self.min
+    }
+
     pub fn map_value(&self, frequency: f32) -> f32 {
         assert_ne!(self.min, self.max, "Cannot map a range of 0.");
         (frequency.ln() - self.min.ln()) / (self.max.ln() - self.min.ln()) * 2. - 1.
