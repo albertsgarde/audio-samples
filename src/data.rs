@@ -1,10 +1,6 @@
 use flexblock_synth::modules::Sum;
 
-use crate::{
-    audio::AudioGenerationError,
-    parameters::{DataParameters, DataPointParameters},
-    Audio,
-};
+use crate::{audio::AudioGenerationError, parameters::DataPointParameters, Audio};
 
 #[derive(Clone)]
 pub struct DataPoint {
@@ -47,32 +43,5 @@ impl DataPoint {
 
     pub fn label(&self) -> &DataPointParameters {
         &self.label
-    }
-}
-
-pub struct DataGenerator {
-    data_parameters: DataParameters,
-    data_point_num: u64,
-}
-
-impl DataGenerator {
-    pub fn new(data_parameters: DataParameters) -> Self {
-        Self {
-            data_parameters,
-            data_point_num: 0,
-        }
-    }
-}
-
-impl Iterator for DataGenerator {
-    type Item = Result<DataPoint, AudioGenerationError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let data_point = self
-            .data_parameters
-            .generate(self.data_point_num)
-            .generate();
-        self.data_point_num += 1;
-        Some(data_point)
     }
 }

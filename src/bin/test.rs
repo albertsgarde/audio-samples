@@ -3,7 +3,6 @@ use std::path::Path;
 
 use anyhow::Result;
 use audio_samples::{
-    data::DataGenerator,
     parameters::{oscillators::OscillatorTypeDistribution, DataParameters, DataPointParameters},
     Audio,
 };
@@ -32,11 +31,13 @@ fn main() -> Result<()> {
         OscillatorTypeDistribution::Pulse(Uniform::new_inclusive(0.0, 0.9)),
         (0.0, 0.2),
     )
-    .with_oscillator(OscillatorTypeDistribution::Noise, (0., 0.25));
+    .with_oscillator(OscillatorTypeDistribution::Noise, (0., 0.25))
+    .with_seed_offset(SEED);
 
-    let generator = DataGenerator::new(parameters);
-
-    for (i, data_point) in generator.take(30).enumerate() {
+    for (i, data_point) in (0..30)
+        .map(|i| parameters.generate(i).generate())
+        .enumerate()
+    {
         let file_path = format!("output/{i}.wav");
         data_point?.audio().to_wav(file_path)?;
     }
