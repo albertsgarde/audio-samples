@@ -1,4 +1,5 @@
 use flexblock_synth::modules::Sum;
+use serde::{Deserialize, Serialize};
 
 use crate::{audio::AudioGenerationError, parameters::DataPointParameters, Audio};
 
@@ -50,7 +51,7 @@ impl DataPoint {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DataPointLabel {
     pub sample_rate: u32,
     pub base_frequency_map: f32,
