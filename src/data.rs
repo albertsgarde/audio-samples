@@ -5,7 +5,7 @@ use crate::{audio::AudioGenerationError, parameters::DataPointParameters, Audio}
 #[derive(Clone)]
 pub struct DataPoint {
     pub audio: Audio,
-    pub label: DataPointParameters,
+    pub parameters: DataPointParameters,
 }
 
 impl DataPoint {
@@ -33,7 +33,7 @@ impl DataPoint {
         let audio = Audio::samples_from_module(&synth, params.sample_rate, params.num_samples)?;
         Ok(Self {
             audio,
-            label: params,
+            parameters: params,
         })
     }
 
@@ -41,7 +41,30 @@ impl DataPoint {
         &self.audio
     }
 
-    pub fn label(&self) -> &DataPointParameters {
-        &self.label
+    pub fn parameters(&self) -> &DataPointParameters {
+        &self.parameters
+    }
+
+    pub fn label(&self) -> DataPointLabel {
+        DataPointLabel::new(&self.parameters)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct DataPointLabel {
+    pub sample_rate: u32,
+    pub base_frequency_map: f32,
+    pub base_frequency: f32,
+    pub num_samples: u64,
+}
+
+impl DataPointLabel {
+    pub fn new(params: &DataPointParameters) -> Self {
+        Self {
+            sample_rate: params.sample_rate,
+            base_frequency_map: params.frequency_map,
+            base_frequency: params.frequency,
+            num_samples: params.num_samples,
+        }
     }
 }
