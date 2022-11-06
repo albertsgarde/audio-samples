@@ -33,11 +33,23 @@ impl DataParameters {
     where
         A: AsRef<[u32]>,
     {
-        assert!(frequency_range.0 < frequency_range.1);
-        assert!(num_samples > 0);
-        assert!(sample_rate > 0);
+        assert!(
+            frequency_range.0 < frequency_range.1,
+            "Invalid frequency range."
+        );
+        assert!(num_samples > 0, "num_samples must be greater than 0.");
+        assert!(sample_rate > 0, "sample_rate must be greater than 0.");
         let possible_chords: Vec<u32> = possible_chords.as_ref().to_vec();
-        assert!(!possible_chords.is_empty());
+        assert!(!possible_chords.is_empty(), "No chords provided.");
+
+        for &chord_type in possible_chords.iter() {
+            assert!(
+                chord_type < crate::CHORD_TYPES.len() as u32,
+                "Invalid chord type. Chord type must be less than {}.",
+                crate::CHORD_TYPES.len()
+            );
+        }
+
         let min_frequency_map = crate::frequency_to_map(frequency_range.0);
         let max_frequency_map = crate::frequency_to_map(frequency_range.1);
         Self {
