@@ -1,3 +1,6 @@
+use std::{collections::HashMap, path::Path};
+
+use anyhow::Context;
 use flexblock_synth::modules::Sum;
 use serde::{Deserialize, Serialize};
 
@@ -68,4 +71,32 @@ impl DataPointLabel {
             num_samples: params.num_samples,
         }
     }
+}
+
+pub fn load_dir<P>(path: P) -> anyhow::Result<Vec<(Audio, DataPointLabel)>>
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+    let labels_path = path.join("labels.json");
+    let labels_file = std::fs::File::open(labels_path)?;
+    let labels: HashMap<String, DataPointLabel> = serde_json::from_reader(labels_file)?;
+    labels
+        .into_iter()
+        .map(|(data_point_name, label)| load_data_point(path, data_point_name, label))
+        .collect()
+}
+
+fn load_data_point(
+    dir_path: &Path,
+    data_point_name: String,
+    label: DataPointLabel,
+) -> anyhow::Result<(Audio, DataPointLabel)> {
+    let data_point_path = dir_path.join(format!("{data_point_name}.wav"));
+    let audio = Audio::from_wav(data_point_path).context(format!(
+        "Failed to load audio for data point '{data_point_name}'."
+    ))?;
+    assert_eq!(audio.sample_rate, label.sample_rate);
+    assert_eq!(audio.num_samples(), label.num_samples as usize);
+    Ok((audio, label))
 }
