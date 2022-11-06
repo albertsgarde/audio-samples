@@ -23,6 +23,7 @@ fn main() -> Result<()> {
     let parameters = DataParameters::new(
         SAMPLE_RATE,
         (MIN_FREQUENCY, MAX_FREQUENCY),
+        [0u32],
         DATA_POINT_LENGTH,
     )
     .with_oscillator(OscillatorTypeDistribution::Sine, (0.0, 0.4))

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::Path};
 
 use anyhow::Context;
-use flexblock_synth::modules::Sum;
+use flexblock_synth::modules::{Module, ModuleTemplate, Sum};
 use serde::{Deserialize, Serialize};
 
 use crate::{audio::AudioGenerationError, parameters::DataPointParameters, Audio};
@@ -13,16 +13,35 @@ pub struct DataPoint {
 }
 
 impl DataPoint {
-    pub fn new(params: DataPointParameters) -> Result<Self, AudioGenerationError> {
-        let mut oscillators = vec![];
-        for oscillator_params in params.oscillators.iter() {
-            let oscillator_module = oscillator_params
-                .create_oscillator(params.frequency, params.sample_rate)
-                * oscillator_params.amplitude();
-            oscillators.push(oscillator_module);
-        }
+    fn oscillators_from_params_with_frequency(
+        frequency: f32,
+        amplitude_factor: f32,
+        parameters: &DataPointParameters,
+    ) -> impl Iterator<Item = ModuleTemplate<impl Module>> + '_ {
+        parameters.oscillators.iter().map(move |oscillator_params| {
+            oscillator_params.create_oscillator(frequency, parameters.sample_rate)
+                * oscillator_params.amplitude()
+                * amplitude_factor
+        })
+    }
 
-        let total_amplitude = params
+    pub fn new(parameters: DataPointParameters) -> Result<Self, AudioGenerationError> {
+        let (_, chord_type) = crate::CHORD_TYPES[parameters.chord_type as usize];
+
+        let amplitude_factor = 1. / chord_type.num_notes() as f32;
+
+        let oscillators: Vec<_> = chord_type
+            .frequencies(parameters.frequency)
+            .flat_map(|frequency| {
+                Self::oscillators_from_params_with_frequency(
+                    frequency,
+                    amplitude_factor,
+                    &parameters,
+                )
+            })
+            .collect();
+
+        let total_amplitude = parameters
             .oscillators
             .iter()
             .map(|oscillator_params| oscillator_params.amplitude())
@@ -30,15 +49,13 @@ impl DataPoint {
 
         let mut synth = Sum::new(oscillators).boxed();
 
-        for effect in params.effects.iter() {
+        for effect in parameters.effects.iter() {
             synth = effect.apply_effect(synth, total_amplitude).boxed();
         }
 
-        let audio = Audio::samples_from_module(&synth, params.sample_rate, params.num_samples)?;
-        Ok(Self {
-            audio,
-            parameters: params,
-        })
+        let audio =
+            Audio::samples_from_module(&synth, parameters.sample_rate, parameters.num_samples)?;
+        Ok(Self { audio, parameters })
     }
 
     pub fn audio(&self) -> &Audio {
@@ -59,6 +76,7 @@ pub struct DataPointLabel {
     pub sample_rate: u32,
     pub base_frequency_map: f32,
     pub base_frequency: f32,
+    pub chord_type: u32,
     pub num_samples: u64,
 }
 
@@ -68,6 +86,7 @@ impl DataPointLabel {
             sample_rate: params.sample_rate,
             base_frequency_map: params.frequency_map,
             base_frequency: params.frequency,
+            chord_type: params.chord_type,
             num_samples: params.num_samples,
         }
     }

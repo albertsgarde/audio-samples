@@ -1,18 +1,36 @@
-mod audio;
-pub mod data;
-pub mod effects;
-mod log_uniform;
-pub mod parameters;
 use std::{
     collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
 };
 
+mod audio;
+mod chord;
+pub mod data;
+pub mod effects;
+mod log_uniform;
+pub mod parameters;
 pub use audio::Audio;
+use chord::ChordType;
 
 const FREQUENCY_MAP_RANGE: (f32, f32) = (20., 20000.);
 const A4_FREQUENCY: f32 = 440.0;
 const A4_NOTE_NUMBER: f32 = 69.0;
+
+pub const CHORD_TYPES: &[(&str, ChordType)] = &[
+    ("Single Note", ChordType::new(&[])),
+    ("Major", ChordType::new(&[5. / 4., 3. / 2.])),
+    ("Minor", ChordType::new(&[6. / 5., 3. / 2.])),
+    ("Major 7th", ChordType::new(&[5. / 4., 3. / 2., 9. / 10.])),
+    ("Minor 7th", ChordType::new(&[6. / 5., 3. / 2., 9. / 10.])),
+    (
+        "Dominant 7th",
+        ChordType::new(&[5. / 4., 3. / 2., 15. / 8.]),
+    ),
+    (
+        "Diminished",
+        ChordType::new(&[6. / 5., std::f32::consts::SQRT_2]),
+    ),
+];
 
 fn hash(x: u64) -> u64 {
     let mut hasher = DefaultHasher::new();
