@@ -86,6 +86,7 @@ fn main() -> Result<()> {
                 sample_rate,
                 base_frequency_map,
                 base_frequency,
+                chord_type: 0,
                 num_samples: samples.len() as u64,
             };
 

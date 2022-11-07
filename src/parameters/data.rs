@@ -1,4 +1,4 @@
-use rand::{distributions::Uniform, prelude::Distribution, SeedableRng};
+use rand::{distributions::Uniform, prelude::Distribution, seq::SliceRandom, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 
 use crate::{
@@ -16,6 +16,7 @@ use super::effects::{EffectDistribution, EffectParameters};
 pub struct DataParameters {
     sample_rate: u32,
     frequency_distribution: Uniform<f32>,
+    possible_chords: Vec<u32>,
     oscillators: Vec<OscillatorDistribution>,
     effects: Vec<EffectDistribution>,
     num_samples: u64,
@@ -23,12 +24,38 @@ pub struct DataParameters {
 }
 
 impl DataParameters {
-    pub fn new(sample_rate: u32, frequency_range: (f32, f32), num_samples: u64) -> Self {
+    pub fn new<A>(
+        sample_rate: u32,
+        frequency_range: (f32, f32),
+        possible_chords: A,
+        num_samples: u64,
+    ) -> Self
+    where
+        A: AsRef<[u32]>,
+    {
+        assert!(
+            frequency_range.0 < frequency_range.1,
+            "Invalid frequency range."
+        );
+        assert!(num_samples > 0, "num_samples must be greater than 0.");
+        assert!(sample_rate > 0, "sample_rate must be greater than 0.");
+        let possible_chords: Vec<u32> = possible_chords.as_ref().to_vec();
+        assert!(!possible_chords.is_empty(), "No chords provided.");
+
+        for &chord_type in possible_chords.iter() {
+            assert!(
+                chord_type < crate::CHORD_TYPES.len() as u32,
+                "Invalid chord type. Chord type must be less than {}.",
+                crate::CHORD_TYPES.len()
+            );
+        }
+
         let min_frequency_map = crate::frequency_to_map(frequency_range.0);
         let max_frequency_map = crate::frequency_to_map(frequency_range.1);
         Self {
             sample_rate,
             frequency_distribution: Uniform::new(min_frequency_map, max_frequency_map),
+            possible_chords,
             oscillators: vec![],
             effects: vec![],
             num_samples,
@@ -79,6 +106,7 @@ pub struct DataPointParameters {
     pub sample_rate: u32,
     pub frequency_map: f32,
     pub frequency: f32,
+    pub chord_type: u32,
     pub oscillators: Vec<OscillatorParameters>,
     pub effects: Vec<EffectParameters>,
     pub num_samples: u64,
@@ -94,6 +122,7 @@ impl DataPointParameters {
             sample_rate: data_parameters.sample_rate,
             frequency_map,
             frequency,
+            chord_type: *data_parameters.possible_chords.choose(&mut rng).unwrap(),
             oscillators: data_parameters
                 .oscillators
                 .iter()
