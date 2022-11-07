@@ -23,7 +23,7 @@ fn main() -> Result<()> {
     let parameters = DataParameters::new(
         SAMPLE_RATE,
         (MIN_FREQUENCY, MAX_FREQUENCY),
-        [0u32],
+        [5],
         DATA_POINT_LENGTH,
     )
     .with_oscillator(OscillatorTypeDistribution::Sine, (0.0, 0.4))
@@ -35,12 +35,9 @@ fn main() -> Result<()> {
     .with_oscillator(OscillatorTypeDistribution::Noise, (0., 0.25))
     .with_seed_offset(SEED);
 
-    for (i, data_point) in (0..30)
-        .map(|i| parameters.generate(i).generate())
-        .enumerate()
-    {
-        let file_path = format!("output/{i}.wav");
-        data_point?.audio().to_wav(file_path)?;
-    }
+    let data_point_parameters = parameters.generate(0);
+    let data_point = data_point_parameters.generate().unwrap();
+
+    println!("{}", data_point.audio().num_samples());
     Ok(())
 }
