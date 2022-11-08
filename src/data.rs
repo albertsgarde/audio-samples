@@ -74,8 +74,8 @@ impl DataPoint {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DataPointLabel {
     pub sample_rate: u32,
-    pub base_frequency_map: f32,
-    pub base_frequency: f32,
+    pub base_frequency_map: Option<f32>,
+    pub base_frequency: Option<f32>,
     pub chord_type: u32,
     pub num_samples: u64,
 }
@@ -84,8 +84,8 @@ impl DataPointLabel {
     pub fn new(params: &DataPointParameters) -> Self {
         Self {
             sample_rate: params.sample_rate,
-            base_frequency_map: params.frequency_map,
-            base_frequency: params.frequency,
+            base_frequency_map: Some(params.frequency_map),
+            base_frequency: Some(params.frequency),
             chord_type: params.chord_type,
             num_samples: params.num_samples,
         }

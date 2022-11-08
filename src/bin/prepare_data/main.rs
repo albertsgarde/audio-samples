@@ -44,7 +44,7 @@ fn main() -> Result<()> {
 
     let note_length = 1.;
 
-    let src_path = r#"C:\Users\alber\Google Drive\Music (Albert)\Studio One\Songs\Audio Samples\Mixdown\sampled_strings.wav"#;
+    let src_path = r#"C:/Users/alber/Google Drive/Music (Albert)/Studio One/Songs/Audio Samples/Mixdown/sampled_strings.wav"#;
     let dest_path = r#"C:\Users\alber\Google Drive\DTU\Deep Learning\project\deep-learning\data\sampled_strings"#;
 
     let mut reader = WavReader::open(src_path).context("Could not open source file.")?;
@@ -84,8 +84,8 @@ fn main() -> Result<()> {
 
             let label = DataPointLabel {
                 sample_rate,
-                base_frequency_map,
-                base_frequency,
+                base_frequency_map: Some(base_frequency_map),
+                base_frequency: Some(base_frequency),
                 chord_type: 0,
                 num_samples: samples.len() as u64,
             };
