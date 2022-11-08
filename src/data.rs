@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::Path};
 
 use anyhow::Context;
-use flexblock_synth::modules::{BufferedSum, Module, ModuleTemplate};
+use flexblock_synth::modules::{BatchedBoxedModule, BufferedSum, Module, ModuleTemplate};
 use serde::{Deserialize, Serialize};
 
 use crate::{audio::AudioGenerationError, parameters::DataPointParameters, Audio};
@@ -47,10 +47,10 @@ impl DataPoint {
             .map(|oscillator_params| oscillator_params.amplitude())
             .sum::<f32>();
 
-        let mut synth = BufferedSum::new(oscillators, 64).boxed();
+        let mut synth = BatchedBoxedModule::new(BufferedSum::new(oscillators, 64), 64);
 
         for effect in parameters.effects.iter() {
-            synth = effect.apply_effect(synth, total_amplitude).boxed();
+            synth = BatchedBoxedModule::new(effect.apply_effect(synth, total_amplitude), 64);
         }
 
         let audio =
