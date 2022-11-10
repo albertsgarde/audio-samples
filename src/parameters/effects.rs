@@ -44,4 +44,12 @@ impl EffectParameters {
             }
         }
     }
+
+    pub fn apply_to_buffer(&self, buffer: &mut [f32], signal_amplitude: f32) {
+        match self {
+            EffectParameters::Distortion(power) => buffer.iter_mut().for_each(|sample| {
+                *sample = flexblock_synth::effects::distortion(*sample, *power, signal_amplitude)
+            }),
+        }
+    }
 }

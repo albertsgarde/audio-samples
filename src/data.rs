@@ -1,7 +1,6 @@
 use std::path::Path;
 
 use anyhow::Context;
-use flexblock_synth::modules::{BatchedBoxedModule, BufferedSum, Module, ModuleTemplate};
 use serde::{Deserialize, Serialize};
 
 use crate::{audio::AudioGenerationError, parameters::DataPointParameters, Audio};
@@ -15,47 +14,42 @@ pub struct DataPoint {
 }
 
 impl DataPoint {
-    fn oscillators_from_params_with_frequency(
-        frequency: f32,
-        amplitude_factor: f32,
-        parameters: &DataPointParameters,
-    ) -> impl Iterator<Item = ModuleTemplate<impl Module>> + '_ {
-        parameters.oscillators.iter().map(move |oscillator_params| {
-            oscillator_params.create_oscillator(frequency, parameters.sample_rate)
-                * (oscillator_params.amplitude() * amplitude_factor)
-        })
-    }
+    fn generate_from_oscillators(parameters: &DataPointParameters) -> Vec<f32> {
+        let mut samples = vec![0.; parameters.num_samples as usize];
 
-    pub fn new(parameters: DataPointParameters) -> Result<Self, AudioGenerationError> {
         let (_, chord_type) = crate::CHORD_TYPES[parameters.chord_type as usize];
+        for frequency in chord_type.frequencies(parameters.frequency) {
+            for oscillator_params in parameters.oscillators.iter() {
+                oscillator_params.write(frequency, parameters.sample_rate, &mut samples);
+            }
+        }
 
         let amplitude_factor = 1. / chord_type.num_notes() as f32;
+        for sample in samples.iter_mut() {
+            *sample *= amplitude_factor;
+        }
 
-        let oscillators: Vec<_> = chord_type
-            .frequencies(parameters.frequency)
-            .flat_map(|frequency| {
-                Self::oscillators_from_params_with_frequency(
-                    frequency,
-                    amplitude_factor,
-                    &parameters,
-                )
-            })
-            .collect();
+        samples
+    }
 
+    fn apply_effects(parameters: &DataPointParameters, buffer: &mut [f32]) {
         let total_amplitude = parameters
             .oscillators
             .iter()
             .map(|oscillator_params| oscillator_params.amplitude())
             .sum::<f32>();
 
-        let mut synth = BatchedBoxedModule::new(BufferedSum::new(oscillators, 64), 64);
-
         for effect in parameters.effects.iter() {
-            synth = BatchedBoxedModule::new(effect.apply_effect(synth, total_amplitude), 64);
+            effect.apply_to_buffer(buffer, total_amplitude);
         }
+    }
 
-        let audio =
-            Audio::samples_from_module(&synth, parameters.sample_rate, parameters.num_samples)?;
+    pub fn new(parameters: DataPointParameters) -> Result<Self, AudioGenerationError> {
+        let mut samples = Self::generate_from_oscillators(&parameters);
+
+        Self::apply_effects(&parameters, &mut samples);
+
+        let audio = Audio::from_samples(samples, parameters.sample_rate);
         Ok(Self { audio, parameters })
     }
 

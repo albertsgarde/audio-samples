@@ -1,6 +1,6 @@
 use flexblock_synth::modules::{
-    BoxedModule, Clamp, ModuleTemplate, NoiseOscillator, PulseOscillator, SawOscillator,
-    SineOscillator, TriangleOscillator,
+    Clamp, Module, NoiseOscillator, PulseOscillator, SawOscillator, SineOscillator,
+    TriangleOscillator,
 };
 use rand::{distributions::Uniform, prelude::Distribution, Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
@@ -90,21 +90,42 @@ pub struct OscillatorParameters {
 }
 
 impl OscillatorParameters {
-    pub fn create_oscillator(
-        &self,
-        frequency: f32,
-        sample_rate: u32,
-    ) -> ModuleTemplate<BoxedModule> {
+    fn write_oscillator(mut oscillator: impl Module, amplitude: f32, buffer: &mut [f32]) {
+        for (sample_num, sample) in buffer.iter_mut().enumerate() {
+            *sample += oscillator.next(sample_num as u64) * amplitude;
+        }
+    }
+
+    pub fn write(&self, frequency: f32, sample_rate: u32, buffer: &mut [f32]) {
+        let amplitude = self.amplitude;
         match self.oscillator_type {
-            OscillatorType::Sine => SineOscillator::new(frequency, sample_rate).boxed(),
-            OscillatorType::Saw => SawOscillator::new(frequency, sample_rate).boxed(),
-            OscillatorType::Pulse(pulse_width) => {
-                PulseOscillator::new(frequency, pulse_width, sample_rate).boxed()
-            }
-            OscillatorType::Triangle => TriangleOscillator::new(frequency, sample_rate).boxed(),
-            OscillatorType::Noise(seed) => {
-                Clamp::new(NoiseOscillator::new(Pcg64Mcg::seed_from_u64(seed)), -1., 1.).boxed()
-            }
+            OscillatorType::Sine => Self::write_oscillator(
+                SineOscillator::new(frequency, sample_rate).module(),
+                amplitude,
+                buffer,
+            ),
+            OscillatorType::Saw => Self::write_oscillator(
+                SawOscillator::new(frequency, sample_rate).module(),
+                amplitude,
+                buffer,
+            ),
+            OscillatorType::Pulse(duty_cycle) => Self::write_oscillator(
+                (PulseOscillator::new(frequency, duty_cycle, sample_rate)
+                    + -(duty_cycle * 2. - 1.))
+                    .module(),
+                amplitude,
+                buffer,
+            ),
+            OscillatorType::Triangle => Self::write_oscillator(
+                TriangleOscillator::new(frequency, sample_rate).module(),
+                amplitude,
+                buffer,
+            ),
+            OscillatorType::Noise(seed) => Self::write_oscillator(
+                Clamp::new(NoiseOscillator::new(Pcg64Mcg::seed_from_u64(seed)), -1., 1.).module(),
+                amplitude,
+                buffer,
+            ),
         }
     }
 

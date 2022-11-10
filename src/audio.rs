@@ -67,6 +67,13 @@ impl Display for UnsupportedWavSpec {
 impl Error for UnsupportedWavSpec {}
 
 impl Audio {
+    pub fn from_samples(samples: Vec<f32>, sample_rate: u32) -> Self {
+        Self {
+            samples,
+            sample_rate,
+        }
+    }
+
     pub fn from_module<M>(
         module: &ModuleTemplate<M>,
         sample_rate: u32,
