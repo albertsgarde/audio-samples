@@ -7,7 +7,8 @@ mod audio;
 mod chord;
 pub mod data;
 pub mod effects;
-mod log_uniform;
+pub mod log_uniform;
+
 pub mod parameters;
 pub use audio::Audio;
 use chord::ChordType;

@@ -1,10 +1,12 @@
-use std::{collections::HashMap, path::Path};
+use std::path::Path;
 
 use anyhow::Context;
 use flexblock_synth::modules::{BatchedBoxedModule, BufferedSum, Module, ModuleTemplate};
 use serde::{Deserialize, Serialize};
 
 use crate::{audio::AudioGenerationError, parameters::DataPointParameters, Audio};
+
+pub const LABELS_FILE_NAME: &str = "_labels.json";
 
 #[derive(Clone)]
 pub struct DataPoint {
@@ -20,8 +22,7 @@ impl DataPoint {
     ) -> impl Iterator<Item = ModuleTemplate<impl Module>> + '_ {
         parameters.oscillators.iter().map(move |oscillator_params| {
             oscillator_params.create_oscillator(frequency, parameters.sample_rate)
-                * oscillator_params.amplitude()
-                * amplitude_factor
+                * (oscillator_params.amplitude() * amplitude_factor)
         })
     }
 
@@ -97,9 +98,9 @@ where
     P: AsRef<Path>,
 {
     let path = path.as_ref();
-    let labels_path = path.join("labels.json");
+    let labels_path = path.join(LABELS_FILE_NAME);
     let labels_file = std::fs::File::open(labels_path)?;
-    let labels: HashMap<String, DataPointLabel> = serde_json::from_reader(labels_file)?;
+    let labels: Vec<(String, DataPointLabel)> = serde_json::from_reader(labels_file)?;
     labels
         .into_iter()
         .map(|(data_point_name, label)| load_data_point(path, data_point_name, label))

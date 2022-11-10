@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
-use audio_samples::data::DataPointLabel;
+use audio_samples::data::{DataPointLabel, LABELS_FILE_NAME};
 use hound::{SampleFormat, WavReader, WavWriter};
 use rand::Rng;
-use std::{collections::HashMap, fs::File};
+use std::fs::File;
 
 const RUN_NAMES: &[&str] = &["loud", "quiet"];
 
@@ -76,7 +76,7 @@ fn main() -> Result<()> {
                 .enumerate()
         });
 
-    let (data_points, labels): (Vec<_>, HashMap<_, _>) = samples
+    let (data_points, labels): (Vec<_>, Vec<_>) = samples
         .into_iter()
         .map(|(sub_index, (samples, (run_name, note_number)))| {
             let base_frequency_map = audio_samples::note_number_to_map(note_number as f32);
@@ -108,7 +108,7 @@ fn main() -> Result<()> {
         }
     }
 
-    let label_path = format!("{dest_path}/labels.json",);
+    let label_path = format!("{dest_path}/{LABELS_FILE_NAME}",);
     let label_file = File::create(label_path).context("Could not create labels file.")?;
     serde_json::to_writer_pretty(label_file, &labels)?;
 

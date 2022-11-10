@@ -1,7 +1,7 @@
-use std::{collections::HashMap, fs::File};
+use std::fs::File;
 
 use anyhow::{Context, Result};
-use audio_samples::parameters::DataParameters;
+use audio_samples::{data::LABELS_FILE_NAME, parameters::DataParameters};
 
 const DATA_SET_SIZE: usize = 1000;
 
@@ -12,7 +12,7 @@ fn main() -> Result<()> {
 
     let data_point_iterator = (0..).map(|i| parameters.generate(i as u64).generate().unwrap());
 
-    let (data_points, labels): (Vec<_>, HashMap<_, _>) = data_point_iterator
+    let (data_points, labels): (Vec<_>, Vec<_>) = data_point_iterator
         .take(DATA_SET_SIZE)
         .enumerate()
         .map(|(i, data_point)| {
@@ -29,7 +29,7 @@ fn main() -> Result<()> {
         audio.to_wav(file_path).context("Failed to write sample.")?;
     }
 
-    let label_path = format!("{output_path}/labels.json",);
+    let label_path = format!("{output_path}/{LABELS_FILE_NAME}",);
     let label_file = File::create(label_path).context("Could not create labels file.")?;
     serde_json::to_writer_pretty(label_file, &labels)?;
 
