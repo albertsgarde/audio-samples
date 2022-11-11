@@ -10,7 +10,7 @@ use crate::{
     },
 };
 
-use super::effects::{EffectDistribution, EffectParameters};
+use super::effects::{EffectDistribution, EffectParameters, EffectTypeDistribution};
 
 #[derive(Debug, Clone)]
 pub struct DataParameters {
@@ -71,10 +71,12 @@ impl DataParameters {
     pub fn with_oscillator(
         mut self,
         oscillator_type_distribution: OscillatorTypeDistribution,
+        probability: f64,
         amplitude_range: (f32, f32),
     ) -> Self {
         self.oscillators.push(OscillatorDistribution::new(
             oscillator_type_distribution,
+            probability,
             amplitude_range,
         ));
         let osc_amplitude_sum = self
@@ -90,12 +92,21 @@ impl DataParameters {
         self
     }
 
-    pub fn with_effect(mut self, effect_distribution: EffectDistribution) -> Self {
-        self.effects.push(effect_distribution);
+    pub fn with_effect(
+        mut self,
+        effect_distribution: EffectTypeDistribution,
+        probability: f64,
+    ) -> Self {
+        self.effects
+            .push(EffectDistribution::new(effect_distribution, probability));
         self
     }
 
     pub fn generate(&self, index: u64) -> DataPointParameters {
+        assert!(
+            self.oscillators.iter().any(|osc| osc.has_frequency()),
+            "Cannot generate a signal without an oscillator with frequency."
+        );
         let seed = hash(index).wrapping_add(self.seed_offset);
         DataPointParameters::new(self, seed)
     }
@@ -118,23 +129,37 @@ impl DataPointParameters {
         let frequency_map = data_parameters.frequency_distribution.sample(&mut rng);
         let frequency = crate::map_to_frequency(frequency_map);
 
+        let oscillators = loop {
+            let oscillators: Vec<_> = data_parameters
+                .oscillators
+                .iter()
+                .flat_map(|oscillator_distribution| oscillator_distribution.sample(&mut rng))
+                .collect();
+            if oscillators
+                .iter()
+                .any(|oscillator| oscillator.has_frequency())
+            {
+                break oscillators;
+            }
+        };
+
         Self {
             sample_rate: data_parameters.sample_rate,
             frequency_map,
             frequency,
             chord_type: *data_parameters.possible_chords.choose(&mut rng).unwrap(),
-            oscillators: data_parameters
-                .oscillators
-                .iter()
-                .map(|oscillator_distribution| oscillator_distribution.sample(&mut rng))
-                .collect(),
+            oscillators,
             effects: data_parameters
                 .effects
                 .iter()
-                .map(|effect_distribution| effect_distribution.sample(&mut rng))
+                .flat_map(|effect_distribution| effect_distribution.sample(&mut rng))
                 .collect(),
             num_samples: data_parameters.num_samples,
         }
+    }
+
+    pub fn has_frequency(&self) -> bool {
+        self.oscillators.iter().any(|osc| osc.has_frequency())
     }
 
     pub fn generate(self) -> Result<DataPoint, AudioGenerationError> {

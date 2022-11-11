@@ -5,7 +5,7 @@ use audio_samples::{
     data::LABELS_FILE_NAME,
     log_uniform::LogUniform,
     parameters::{
-        effects::EffectDistribution, oscillators::OscillatorTypeDistribution, DataParameters,
+        effects::EffectTypeDistribution, oscillators::OscillatorTypeDistribution, DataParameters,
     },
 };
 use rand::distributions::Uniform;
@@ -17,17 +17,21 @@ fn main() -> Result<()> {
         r#"C:\Users\alber\Google Drive\DTU\Deep Learning\project\deep-learning\data\synth_data"#;
 
     let parameters = DataParameters::new(44100, (50., 2000.), [0], 256);
-    let parameters = parameters.with_oscillator(OscillatorTypeDistribution::Sine, (0.1, 0.2));
-    let parameters = parameters.with_oscillator(OscillatorTypeDistribution::Saw, (0.1, 0.2));
+    let parameters = parameters.with_oscillator(OscillatorTypeDistribution::Sine, 0.5, (0.1, 0.2));
+    let parameters = parameters.with_oscillator(OscillatorTypeDistribution::Saw, 0.5, (0.1, 0.2));
     let parameters = parameters.with_oscillator(
         OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+        0.5,
         (0.1, 0.2),
     );
-    let parameters = parameters.with_oscillator(OscillatorTypeDistribution::Triangle, (0.1, 0.2));
-    let parameters = parameters.with_oscillator(OscillatorTypeDistribution::Noise, (0.1, 0.2));
-    let parameters = parameters.with_effect(EffectDistribution::Distortion(
-        LogUniform::from_tuple((0.1, 20.)),
-    ));
+    let parameters =
+        parameters.with_oscillator(OscillatorTypeDistribution::Triangle, 0.5, (0.1, 0.2));
+    let parameters = parameters.with_oscillator(OscillatorTypeDistribution::Noise, 0.5, (0.1, 0.2));
+    let parameters = parameters.with_effect(
+        EffectTypeDistribution::Distortion(LogUniform::from_tuple((0.1, 20.))),
+        0.5,
+    );
+    let parameters = parameters.with_effect(EffectTypeDistribution::Normalize, 1.);
 
     let data_point_iterator = (0..).map(|i| parameters.generate(i as u64).generate().unwrap());
 

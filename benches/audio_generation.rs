@@ -1,5 +1,5 @@
 use audio_samples::parameters::{
-    effects::EffectDistribution, oscillators::OscillatorTypeDistribution, DataParameters,
+    effects::EffectTypeDistribution, oscillators::OscillatorTypeDistribution, DataParameters,
 };
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
 use flexblock_synth::modules::{ObjectSafeModule, PulseOscillator};
@@ -22,81 +22,89 @@ pub fn bench(c: &mut Criterion) {
         ("empty_chord", large_chord_parameters.clone()),
         (
             "sine",
-            single_note_parameters
-                .clone()
-                .with_oscillator(OscillatorTypeDistribution::Sine, (0.5, 0.7)),
+            single_note_parameters.clone().with_oscillator(
+                OscillatorTypeDistribution::Sine,
+                1.,
+                (0.5, 0.7),
+            ),
         ),
         (
             "sine_chord",
-            large_chord_parameters
-                .clone()
-                .with_oscillator(OscillatorTypeDistribution::Sine, (0.5, 0.7)),
+            large_chord_parameters.clone().with_oscillator(
+                OscillatorTypeDistribution::Sine,
+                1.,
+                (0.5, 0.7),
+            ),
         ),
         (
             "sine_dist",
             single_note_parameters
                 .clone()
-                .with_oscillator(OscillatorTypeDistribution::Sine, (0.5, 0.7))
-                .with_effect(EffectDistribution::distortion((0.2, 20.))),
+                .with_oscillator(OscillatorTypeDistribution::Sine, 1., (0.5, 0.7))
+                .with_effect(EffectTypeDistribution::distortion((0.2, 20.)), 1.),
         ),
         (
             "sine_chord_dist",
             large_chord_parameters
                 .clone()
-                .with_oscillator(OscillatorTypeDistribution::Sine, (0.5, 0.7))
-                .with_effect(EffectDistribution::distortion((0.2, 20.))),
+                .with_oscillator(OscillatorTypeDistribution::Sine, 1., (0.5, 0.7))
+                .with_effect(EffectTypeDistribution::distortion((0.2, 20.)), 1.),
         ),
         (
             "all_osc",
             single_note_parameters
                 .clone()
-                .with_oscillator(OscillatorTypeDistribution::Sine, (0.1, 0.2))
-                .with_oscillator(OscillatorTypeDistribution::Saw, (0.1, 0.2))
-                .with_oscillator(OscillatorTypeDistribution::Triangle, (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Sine, 1., (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Saw, 1., (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Triangle, 1., (0.1, 0.2))
                 .with_oscillator(
                     OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                    1.,
                     (0.1, 0.2),
                 )
-                .with_oscillator(OscillatorTypeDistribution::Noise, (0.1, 0.2)),
+                .with_oscillator(OscillatorTypeDistribution::Noise, 1., (0.1, 0.2)),
         ),
         (
             "all_osc_chord",
             large_chord_parameters
                 .clone()
-                .with_oscillator(OscillatorTypeDistribution::Sine, (0.1, 0.2))
-                .with_oscillator(OscillatorTypeDistribution::Saw, (0.1, 0.2))
-                .with_oscillator(OscillatorTypeDistribution::Triangle, (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Sine, 1., (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Saw, 1., (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Triangle, 1., (0.1, 0.2))
                 .with_oscillator(
                     OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                    1.,
                     (0.1, 0.2),
                 )
-                .with_oscillator(OscillatorTypeDistribution::Noise, (0.1, 0.2)),
+                .with_oscillator(OscillatorTypeDistribution::Noise, 1., (0.1, 0.2)),
         ),
         (
             "all_osc_dist",
             single_note_parameters
-                .with_oscillator(OscillatorTypeDistribution::Sine, (0.1, 0.2))
-                .with_oscillator(OscillatorTypeDistribution::Saw, (0.1, 0.2))
-                .with_oscillator(OscillatorTypeDistribution::Triangle, (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Sine, 1., (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Saw, 1., (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Triangle, 1., (0.1, 0.2))
                 .with_oscillator(
                     OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                    1.,
                     (0.1, 0.2),
                 )
-                .with_oscillator(OscillatorTypeDistribution::Noise, (0.1, 0.2))
-                .with_effect(EffectDistribution::distortion((0.2, 20.))),
+                .with_oscillator(OscillatorTypeDistribution::Noise, 1., (0.1, 0.2))
+                .with_effect(EffectTypeDistribution::distortion((0.2, 20.)), 1.),
         ),
         (
             "all_osc_chord_dist",
             large_chord_parameters
-                .with_oscillator(OscillatorTypeDistribution::Sine, (0.1, 0.2))
-                .with_oscillator(OscillatorTypeDistribution::Saw, (0.1, 0.2))
-                .with_oscillator(OscillatorTypeDistribution::Triangle, (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Sine, 1., (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Saw, 1., (0.1, 0.2))
+                .with_oscillator(OscillatorTypeDistribution::Triangle, 1., (0.1, 0.2))
                 .with_oscillator(
                     OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                    1.,
                     (0.1, 0.2),
                 )
-                .with_oscillator(OscillatorTypeDistribution::Noise, (0.1, 0.2))
-                .with_effect(EffectDistribution::distortion((0.2, 20.))),
+                .with_oscillator(OscillatorTypeDistribution::Noise, 1., (0.1, 0.2))
+                .with_effect(EffectTypeDistribution::distortion((0.2, 20.)), 1.),
         ),
     ];
     for (label, parameters) in parameters.iter() {
@@ -110,32 +118,39 @@ pub fn oscillators(c: &mut Criterion) {
     let parameters = [
         (
             "osc_sine",
-            base_parameters
-                .clone()
-                .with_oscillator(OscillatorTypeDistribution::Sine, (0.5, 0.7)),
+            base_parameters.clone().with_oscillator(
+                OscillatorTypeDistribution::Sine,
+                1.,
+                (0.5, 0.7),
+            ),
         ),
         (
             "osc_saw",
-            base_parameters
-                .clone()
-                .with_oscillator(OscillatorTypeDistribution::Saw, (0.5, 0.7)),
+            base_parameters.clone().with_oscillator(
+                OscillatorTypeDistribution::Saw,
+                1.,
+                (0.5, 0.7),
+            ),
         ),
         (
             "osc_triangle",
-            base_parameters
-                .clone()
-                .with_oscillator(OscillatorTypeDistribution::Triangle, (0.5, 0.7)),
+            base_parameters.clone().with_oscillator(
+                OscillatorTypeDistribution::Triangle,
+                1.,
+                (0.5, 0.7),
+            ),
         ),
         (
             "osc_pulse",
             base_parameters.clone().with_oscillator(
                 OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                1.,
                 (0.5, 0.7),
             ),
         ),
         (
             "osc_noise",
-            base_parameters.with_oscillator(OscillatorTypeDistribution::Noise, (0.5, 0.7)),
+            base_parameters.with_oscillator(OscillatorTypeDistribution::Noise, 1., (0.5, 0.7)),
         ),
     ];
 

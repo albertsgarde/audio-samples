@@ -1,6 +1,5 @@
 use flexblock_synth::modules::{
-    Clamp, Module, NoiseOscillator, PulseOscillator, SawOscillator, SineOscillator,
-    TriangleOscillator,
+    Module, NoiseOscillator, PulseOscillator, SawOscillator, SineOscillator, TriangleOscillator,
 };
 use rand::{distributions::Uniform, prelude::Distribution, Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
@@ -14,6 +13,18 @@ pub enum OscillatorTypeDistribution {
     Pulse(Uniform<f32>),
     Triangle,
     Noise,
+}
+
+impl OscillatorTypeDistribution {
+    pub fn has_frequency(&self) -> bool {
+        match self {
+            OscillatorTypeDistribution::Sine => true,
+            OscillatorTypeDistribution::Saw => true,
+            OscillatorTypeDistribution::Pulse(_) => true,
+            OscillatorTypeDistribution::Triangle => true,
+            OscillatorTypeDistribution::Noise => false,
+        }
+    }
 }
 
 impl Distribution<OscillatorType> for OscillatorTypeDistribution {
@@ -33,12 +44,14 @@ impl Distribution<OscillatorType> for OscillatorTypeDistribution {
 #[derive(Debug, Clone)]
 pub struct OscillatorDistribution {
     oscillator_type_distribution: OscillatorTypeDistribution,
+    probability: f64,
     amplitude_distribution: LogUniform,
 }
 
 impl OscillatorDistribution {
     pub fn new(
         oscillator_type_distribution: OscillatorTypeDistribution,
+        probability: f64,
         amplitude_range: (f32, f32),
     ) -> Self {
         assert!(
@@ -53,8 +66,11 @@ impl OscillatorDistribution {
             amplitude_range.1 <= 1.0,
             "Amplitude range must be less than 1."
         );
+        assert!(probability > 0.0, "Probability must be positive.");
+        assert!(probability <= 1.0, "Probability must be less than 1.");
         Self {
             oscillator_type_distribution,
+            probability,
             amplitude_distribution: LogUniform::from_tuple(amplitude_range),
         }
     }
@@ -62,14 +78,19 @@ impl OscillatorDistribution {
     pub fn maximum_amplitude(&self) -> f32 {
         self.amplitude_distribution.max()
     }
+
+    pub fn has_frequency(&self) -> bool {
+        self.oscillator_type_distribution.has_frequency()
+    }
 }
 
-impl Distribution<OscillatorParameters> for OscillatorDistribution {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> OscillatorParameters {
-        OscillatorParameters {
-            oscillator_type: self.oscillator_type_distribution.sample(rng),
-            amplitude: self.amplitude_distribution.sample(rng),
-        }
+impl Distribution<Option<OscillatorParameters>> for OscillatorDistribution {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Option<OscillatorParameters> {
+        rng.gen_bool(self.probability)
+            .then(|| OscillatorParameters {
+                oscillator_type: self.oscillator_type_distribution.sample(rng),
+                amplitude: self.amplitude_distribution.sample(rng),
+            })
     }
 }
 
@@ -122,7 +143,7 @@ impl OscillatorParameters {
                 buffer,
             ),
             OscillatorType::Noise(seed) => Self::write_oscillator(
-                Clamp::new(NoiseOscillator::new(Pcg64Mcg::seed_from_u64(seed)), -1., 1.).module(),
+                NoiseOscillator::new(Pcg64Mcg::seed_from_u64(seed)).module(),
                 amplitude,
                 buffer,
             ),
@@ -131,5 +152,16 @@ impl OscillatorParameters {
 
     pub fn amplitude(&self) -> f32 {
         self.amplitude
+    }
+
+    pub fn has_frequency(&self) -> bool {
+        self.amplitude > 0.0
+            && match self.oscillator_type {
+                OscillatorType::Sine => true,
+                OscillatorType::Saw => true,
+                OscillatorType::Pulse(_) => true,
+                OscillatorType::Triangle => true,
+                OscillatorType::Noise(_) => false,
+            }
     }
 }
