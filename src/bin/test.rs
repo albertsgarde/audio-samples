@@ -21,13 +21,14 @@ use rand_pcg::Pcg64Mcg;
 const SAMPLE_RATE: u32 = 44100;
 const SEED: u64 = 0;
 const DATA_POINT_LENGTH: u64 = SAMPLE_RATE as u64 * 5;
-const MIN_FREQUENCY: f32 = 50.0;
-const MAX_FREQUENCY: f32 = 2000.0;
+const MIN_FREQUENCY: f32 = 200.0;
+const MAX_FREQUENCY: f32 = 800.0;
 
 fn main() -> Result<()> {
     let parameters = DataParameters::new(
         SAMPLE_RATE,
         (MIN_FREQUENCY, MAX_FREQUENCY),
+        (0.5, 3.),
         [0, 1, 2, 3, 4, 5, 6],
         DATA_POINT_LENGTH,
     )
@@ -47,7 +48,7 @@ fn main() -> Result<()> {
     .with_effect(EffectTypeDistribution::Normalize, 1.)
     .with_seed_offset(SEED);
 
-    for i in 0..100 {
+    for i in 0..10 {
         let data_parameters = parameters.generate(i);
         let data_point = data_parameters.generate().unwrap();
         data_point.audio().to_wav(format!("data/test_{i}.wav"))?;

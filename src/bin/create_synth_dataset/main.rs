@@ -16,7 +16,7 @@ fn main() -> Result<()> {
     let output_path =
         r#"C:\Users\alber\Google Drive\DTU\Deep Learning\project\deep-learning\data\synth_data"#;
 
-    let parameters = DataParameters::new(44100, (50., 2000.), [0], 256);
+    let parameters = DataParameters::new(44100, (50., 2000.), (0.5, 3.), [0], 256);
     let parameters = parameters.with_oscillator(OscillatorTypeDistribution::Sine, 0.5, (0.1, 0.2));
     let parameters = parameters.with_oscillator(OscillatorTypeDistribution::Saw, 0.5, (0.1, 0.2));
     let parameters = parameters.with_oscillator(

@@ -1,5 +1,6 @@
 use flexblock_synth::modules::{
-    Module, NoiseOscillator, PulseOscillator, SawOscillator, SineOscillator, TriangleOscillator,
+    Module, NoiseOscillator, PulseOscillator, RandomWalk, SawOscillator, SineOscillator,
+    TriangleOscillator,
 };
 use rand::{distributions::Uniform, prelude::Distribution, Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
@@ -117,28 +118,42 @@ impl OscillatorParameters {
         }
     }
 
-    pub fn write(&self, frequency: f32, sample_rate: u32, buffer: &mut [f32]) {
+    pub fn write(
+        &self,
+        frequency: f32,
+        frequency_std_dev: f32,
+        frequency_random_walk_seed: u64,
+        sample_rate: u32,
+        buffer: &mut [f32],
+    ) {
         let amplitude = self.amplitude;
+
+        let frequency_walk_dampening = 0.9;
+        let rng = Pcg64Mcg::seed_from_u64(frequency_random_walk_seed);
+        let walk_std_dev = frequency * ((2f32).powf(frequency_std_dev / 1200.) - 1.);
+        let frequency_module =
+            RandomWalk::new(rng, walk_std_dev, frequency_walk_dampening, sample_rate) + frequency;
+
         match self.oscillator_type {
             OscillatorType::Sine => Self::write_oscillator(
-                SineOscillator::new(frequency, sample_rate).module(),
+                SineOscillator::new(frequency_module, sample_rate).module(),
                 amplitude,
                 buffer,
             ),
             OscillatorType::Saw => Self::write_oscillator(
-                SawOscillator::new(frequency, sample_rate).module(),
+                SawOscillator::new(frequency_module, sample_rate).module(),
                 amplitude,
                 buffer,
             ),
             OscillatorType::Pulse(duty_cycle) => Self::write_oscillator(
-                (PulseOscillator::new(frequency, duty_cycle, sample_rate)
+                (PulseOscillator::new(frequency_module, duty_cycle, sample_rate)
                     + -(duty_cycle * 2. - 1.))
                     .module(),
                 amplitude,
                 buffer,
             ),
             OscillatorType::Triangle => Self::write_oscillator(
-                TriangleOscillator::new(frequency, sample_rate).module(),
+                TriangleOscillator::new(frequency_module, sample_rate).module(),
                 amplitude,
                 buffer,
             ),

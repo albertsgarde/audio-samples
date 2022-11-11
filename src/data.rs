@@ -1,6 +1,8 @@
 use std::path::Path;
 
 use anyhow::Context;
+use rand::{distributions, Rng, SeedableRng};
+use rand_pcg::Pcg64Mcg;
 use serde::{Deserialize, Serialize};
 
 use crate::{audio::AudioGenerationError, parameters::DataPointParameters, Audio};
@@ -18,9 +20,18 @@ impl DataPoint {
         let mut samples = vec![0.; parameters.num_samples as usize];
 
         let (_, chord_type) = crate::CHORD_TYPES[parameters.chord_type as usize];
+
+        let mut rng = Pcg64Mcg::seed_from_u64(parameters.frequency_walk_seed);
+
         for frequency in chord_type.frequencies(parameters.frequency) {
             for oscillator_params in parameters.oscillators.iter() {
-                oscillator_params.write(frequency, parameters.sample_rate, &mut samples);
+                oscillator_params.write(
+                    frequency,
+                    parameters.frequency_std_dev,
+                    rng.sample(distributions::Standard),
+                    parameters.sample_rate,
+                    &mut samples,
+                );
             }
         }
 
