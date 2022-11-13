@@ -80,8 +80,8 @@ impl DataPoint {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DataPointLabel {
     pub sample_rate: u32,
-    pub base_frequency_map: Option<f32>,
     pub base_frequency: Option<f32>,
+    pub note: Option<u32>,
     pub chord_type: u32,
     pub num_samples: u64,
 }
@@ -90,11 +90,41 @@ impl DataPointLabel {
     pub fn new(params: &DataPointParameters) -> Self {
         Self {
             sample_rate: params.sample_rate,
-            base_frequency_map: Some(params.frequency_map),
             base_frequency: Some(params.frequency),
+            note: Some(crate::note_number_to_note(crate::frequency_to_note_number(
+                params.frequency,
+            ))),
             chord_type: params.chord_type,
             num_samples: params.num_samples,
         }
+    }
+
+    pub fn sample_rate(&self) -> u32 {
+        self.sample_rate
+    }
+
+    pub fn base_frequency(&self) -> Option<f32> {
+        self.base_frequency
+    }
+
+    pub fn base_frequency_map(&self) -> Option<f32> {
+        self.base_frequency.map(crate::frequency_to_map)
+    }
+
+    pub fn note_number(&self) -> Option<f32> {
+        self.base_frequency.map(crate::frequency_to_note_number)
+    }
+
+    pub fn note(&self) -> Option<u32> {
+        self.note
+    }
+
+    pub fn chord_type(&self) -> u32 {
+        self.chord_type
+    }
+
+    pub fn num_samples(&self) -> u64 {
+        self.num_samples
     }
 }
 

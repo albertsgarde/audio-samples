@@ -77,3 +77,7 @@ pub fn note_number_to_map(note_number: f32) -> f32 {
 pub fn frequency_to_note_number(frequency: f32) -> f32 {
     69.0 + 12.0 * (frequency / 440.0).log2()
 }
+
+pub fn note_number_to_note(note_number: f32) -> u32 {
+    note_number.round() as u32 % 12
+}

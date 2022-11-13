@@ -38,9 +38,7 @@ fn main() -> Result<()> {
         .take(DATA_SET_SIZE)
         .enumerate()
         .map(|(i, data_point)| {
-            let mut label = data_point.label();
-            label.base_frequency = None;
-            label.base_frequency_map = None;
+            let label = data_point.label();
             let data_point_name = format!("synth_chord_{i}");
             (
                 (data_point_name.clone(), data_point.audio().clone()),
