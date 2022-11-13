@@ -9,10 +9,14 @@ pub struct LogUniform {
 impl LogUniform {
     pub fn from_tuple(mut range: (f32, f32)) -> Self {
         assert!(range.0 >= 0.0, "Range must be non-negative.");
+        assert!(range.1 >= range.0);
         if range.0 == 0.0 {
             range.0 = 1e-6;
+
+            if range.1 < range.0 {
+                range.1 = range.0;
+            }
         }
-        assert!(range.1 >= range.0);
         Self {
             min: range.0,
             max: range.1,
