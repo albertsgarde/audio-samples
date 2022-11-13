@@ -41,7 +41,7 @@ fn main() -> Result<()> {
             let mut label = data_point.label();
             label.base_frequency = None;
             label.base_frequency_map = None;
-            let data_point_name = format!("{i}");
+            let data_point_name = format!("synth_chord_{i}");
             (
                 (data_point_name.clone(), data_point.audio().clone()),
                 (data_point_name, label),

@@ -39,7 +39,7 @@ fn main() -> Result<()> {
         .take(DATA_SET_SIZE)
         .enumerate()
         .map(|(i, data_point)| {
-            let data_point_name = format!("{i}");
+            let data_point_name = format!("synth_{i}");
             (
                 (data_point_name.clone(), data_point.audio().clone()),
                 (data_point_name, data_point.label()),
