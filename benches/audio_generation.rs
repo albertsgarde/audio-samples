@@ -1,5 +1,6 @@
 use audio_samples::parameters::{
     effects::EffectTypeDistribution, oscillators::OscillatorTypeDistribution, DataParameters,
+    OctaveParameters,
 };
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
 use flexblock_synth::modules::{ObjectSafeModule, PulseOscillator};
@@ -15,8 +16,11 @@ fn bench_parameters(c: &mut Criterion, label: &str, parameters: &DataParameters)
 }
 
 pub fn bench(c: &mut Criterion) {
-    let single_note_parameters = DataParameters::new(44100, (50., 2000.), (0.5, 3.), [0], 256);
-    let large_chord_parameters = DataParameters::new(44100, (50., 2000.), (0.5, 3.), [5], 256);
+    let octave_parameters = OctaveParameters::new(0.5, 0.3, 90., 10_000.);
+    let single_note_parameters =
+        DataParameters::new(44100, (50., 2000.), (0.5, 3.), [0], octave_parameters, 256);
+    let large_chord_parameters =
+        DataParameters::new(44100, (50., 2000.), (0.5, 3.), [5], octave_parameters, 256);
     let parameters = [
         ("empty", single_note_parameters.clone()),
         ("empty_chord", large_chord_parameters.clone()),
@@ -113,7 +117,9 @@ pub fn bench(c: &mut Criterion) {
 }
 
 pub fn oscillators(c: &mut Criterion) {
-    let base_parameters = DataParameters::new(44100, (50., 2000.), (0.5, 3.), [0], 256);
+    let octave_parameters = OctaveParameters::new(0.5, 0.3, 90., 10_000.);
+    let base_parameters =
+        DataParameters::new(44100, (50., 2000.), (0.5, 3.), [0], octave_parameters, 256);
 
     let parameters = [
         (

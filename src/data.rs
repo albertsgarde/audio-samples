@@ -23,7 +23,7 @@ impl DataPoint {
 
         let mut rng = Pcg64Mcg::seed_from_u64(parameters.frequency_walk_seed);
 
-        for frequency in chord_type.frequencies(parameters.frequency) {
+        for &frequency in parameters.frequencies.iter() {
             for oscillator_params in parameters.oscillators.iter() {
                 oscillator_params.write(
                     frequency,
@@ -90,9 +90,9 @@ impl DataPointLabel {
     pub fn new(params: &DataPointParameters) -> Self {
         Self {
             sample_rate: params.sample_rate,
-            base_frequency: Some(params.frequency),
+            base_frequency: Some(params.base_frequency),
             note: Some(crate::note_number_to_note(crate::frequency_to_note_number(
-                params.frequency,
+                params.base_frequency,
             ))),
             chord_type: params.chord_type,
             num_samples: params.num_samples,

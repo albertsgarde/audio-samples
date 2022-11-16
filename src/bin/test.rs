@@ -7,7 +7,7 @@ use audio_samples::{
     parameters::{
         effects::{EffectDistribution, EffectTypeDistribution},
         oscillators::OscillatorTypeDistribution,
-        DataParameters, DataPointParameters,
+        DataParameters, DataPointParameters, OctaveParameters,
     },
     Audio,
 };
@@ -25,11 +25,13 @@ const MIN_FREQUENCY: f32 = 200.0;
 const MAX_FREQUENCY: f32 = 800.0;
 
 fn main() -> Result<()> {
+    let octave_parameters = OctaveParameters::new(0.5, 0.3, 90., 10_000.);
     let parameters = DataParameters::new(
         SAMPLE_RATE,
         (MIN_FREQUENCY, MAX_FREQUENCY),
         (0.5, 3.),
         [0, 1, 2, 3, 4, 5, 6],
+        octave_parameters,
         DATA_POINT_LENGTH,
     )
     .with_oscillator(OscillatorTypeDistribution::Sine, 0.5, (0.1, 0.2))

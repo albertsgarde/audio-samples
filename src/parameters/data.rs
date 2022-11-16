@@ -1,5 +1,5 @@
 use rand::{
-    distributions::{self, Uniform},
+    distributions::{Standard, Uniform},
     prelude::Distribution,
     seq::SliceRandom,
     Rng, SeedableRng,
@@ -18,12 +18,113 @@ use crate::{
 
 use super::effects::{EffectDistribution, EffectParameters, EffectTypeDistribution};
 
+#[derive(Clone, Copy, Debug)]
+pub struct OctaveParameters {
+    add_root_octave_probability: f64,
+    add_other_octave_probability: f64,
+    min_frequency: f32,
+    max_frequency: f32,
+}
+
+impl OctaveParameters {
+    pub fn new(
+        add_root_octave_probability: f64,
+        add_other_octave_probability: f64,
+        min_frequency: f32,
+        max_frequency: f32,
+    ) -> Self {
+        assert!(
+            add_root_octave_probability >= 0.,
+            "Probabilities must be non-negative. Value: {add_root_octave_probability}"
+        );
+        assert!(
+            add_root_octave_probability <= 1.,
+            "Probabilities must be no more than 1. Value: {add_root_octave_probability}"
+        );
+        assert!(
+            add_other_octave_probability >= 0.,
+            "Probabilities must be non-negative. Value: {add_other_octave_probability}"
+        );
+        assert!(
+            add_other_octave_probability <= 1.,
+            "Probabilities must be no more than 1. Value: {add_other_octave_probability}"
+        );
+
+        assert!(
+            min_frequency > 0.,
+            "Minimum frequency must be positive. Value: {min_frequency}"
+        );
+
+        assert!(
+            max_frequency >= min_frequency*2.,
+            "Maximum frequency must be at least twice the minimum frequency. Max frequency: {max_frequency}"
+        );
+
+        Self {
+            add_root_octave_probability,
+            add_other_octave_probability,
+            min_frequency,
+            max_frequency,
+        }
+    }
+
+    pub fn generate_octave(&self, rng: &mut impl Rng, frequency: f32) -> f32 {
+        let lowest_octave = frequency / ((frequency / self.min_frequency).floor());
+        let num_octaves = (1u32..40)
+            .find(|&i| lowest_octave * (i as f32).exp2() > self.max_frequency)
+            .expect("Could not find octave");
+        let octave = rng.gen_range(0..num_octaves);
+
+        frequency * (octave as f32).exp2()
+    }
+
+    pub fn generate_frequencies(
+        &self,
+        rng: &mut impl Rng,
+        frequency: f32,
+        root: bool,
+    ) -> impl Iterator<Item = f32> {
+        let given_octave = (-10i32..40)
+            .find(|&i| frequency / (i as f32).exp2() < self.min_frequency)
+            .unwrap()
+            - 1;
+
+        let lowest_octave = frequency / (given_octave as f32).exp2();
+
+        let num_octaves = (1i32..40)
+            .find(|&i| lowest_octave * (i as f32).exp2() > self.max_frequency)
+            .expect("Could not find octave");
+
+        let mut octaves = vec![if root {
+            given_octave
+        } else {
+            rng.gen_range(0..num_octaves)
+        }];
+        let add_octave_probability = if root {
+            self.add_root_octave_probability
+        } else {
+            self.add_other_octave_probability
+        };
+        while rng.gen_bool(add_octave_probability) {
+            let octave = rng.gen_range(0..num_octaves);
+            if !octaves.contains(&octave) {
+                octaves.push(octave);
+            }
+        }
+
+        octaves
+            .into_iter()
+            .map(move |octave| lowest_octave * (octave as f32).exp2())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DataParameters {
     sample_rate: u32,
     frequency_distribution: Uniform<f32>,
     frequency_std_dev_distribution: LogUniform,
     possible_chords: Vec<u32>,
+    octave_parameters: OctaveParameters,
     oscillators: Vec<OscillatorDistribution>,
     effects: Vec<EffectDistribution>,
     num_samples: u64,
@@ -36,6 +137,7 @@ impl DataParameters {
         frequency_range: (f32, f32),
         frequency_std_dev_range: (f32, f32),
         possible_chords: A,
+        octave_parameters: OctaveParameters,
         num_samples: u64,
     ) -> Self
     where
@@ -73,6 +175,7 @@ impl DataParameters {
             frequency_distribution: Uniform::new(min_frequency_map, max_frequency_map),
             frequency_std_dev_distribution: LogUniform::from_tuple(frequency_std_dev_range),
             possible_chords,
+            octave_parameters,
             oscillators: vec![],
             effects: vec![],
             num_samples,
@@ -132,11 +235,11 @@ impl DataParameters {
 #[derive(Debug, Clone)]
 pub struct DataPointParameters {
     pub sample_rate: u32,
-    pub frequency_map: f32,
-    pub frequency: f32,
+    pub base_frequency: f32,
     pub frequency_std_dev: f32,
     pub frequency_walk_seed: u64,
     pub chord_type: u32,
+    pub frequencies: Vec<f32>,
     pub oscillators: Vec<OscillatorParameters>,
     pub effects: Vec<EffectParameters>,
     pub num_samples: u64,
@@ -146,7 +249,7 @@ impl DataPointParameters {
     fn new(data_parameters: &DataParameters, seed: u64) -> Self {
         let mut rng = Pcg64Mcg::seed_from_u64(seed);
         let frequency_map = data_parameters.frequency_distribution.sample(&mut rng);
-        let frequency = crate::map_to_frequency(frequency_map);
+        let base_frequency = crate::map_to_frequency(frequency_map);
 
         let oscillators = loop {
             let oscillators: Vec<_> = data_parameters
@@ -162,15 +265,33 @@ impl DataPointParameters {
             }
         };
 
+        let chord_type = *data_parameters.possible_chords.choose(&mut rng).unwrap();
+
+        let chord = crate::CHORD_TYPES[chord_type as usize].1;
+
+        let octave_parameters = &data_parameters.octave_parameters;
+
+        let frequencies: Vec<f32> = octave_parameters
+            .generate_frequencies(&mut rng, base_frequency, true)
+            .chain(
+                chord
+                    .frequencies(base_frequency)
+                    .skip(1)
+                    .flat_map(|frequency| {
+                        octave_parameters.generate_frequencies(&mut rng, frequency, false)
+                    }),
+            )
+            .collect();
+
         Self {
             sample_rate: data_parameters.sample_rate,
-            frequency_map,
-            frequency,
+            base_frequency,
             frequency_std_dev: data_parameters
                 .frequency_std_dev_distribution
                 .sample(&mut rng),
-            frequency_walk_seed: rng.sample(distributions::Standard),
-            chord_type: *data_parameters.possible_chords.choose(&mut rng).unwrap(),
+            frequency_walk_seed: rng.sample(Standard),
+            chord_type,
+            frequencies,
             oscillators,
             effects: data_parameters
                 .effects
