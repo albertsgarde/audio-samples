@@ -219,6 +219,10 @@ impl DataParameters {
         self
     }
 
+    pub fn num_samples(&self) -> u64 {
+        self.num_samples
+    }
+
     pub fn generate(&self, index: u64) -> DataPointParameters {
         assert!(
             self.oscillators.iter().any(|osc| osc.has_frequency()),
