@@ -1,5 +1,6 @@
 use std::{
     collections::hash_map::DefaultHasher,
+    f32::consts::SQRT_2,
     hash::{Hash, Hasher},
 };
 
@@ -19,18 +20,14 @@ const A4_NOTE_NUMBER: f32 = 69.0;
 
 pub const CHORD_TYPES: &[(&str, ChordType)] = &[
     ("Single Note", ChordType::new(&[])),
+    ("Power", ChordType::new(&[3. / 2.])),
     ("Major", ChordType::new(&[5. / 4., 3. / 2.])),
     ("Minor", ChordType::new(&[6. / 5., 3. / 2.])),
-    ("Major 7th", ChordType::new(&[5. / 4., 3. / 2., 9. / 10.])),
-    ("Minor 7th", ChordType::new(&[6. / 5., 3. / 2., 9. / 10.])),
-    (
-        "Dominant 7th",
-        ChordType::new(&[5. / 4., 3. / 2., 15. / 8.]),
-    ),
-    (
-        "Diminished",
-        ChordType::new(&[6. / 5., std::f32::consts::SQRT_2]),
-    ),
+    ("Diminished", ChordType::new(&[6. / 5., SQRT_2])),
+    ("Sus", ChordType::new(&[4. / 3., 3. / 2.])),
+    ("Major 7th", ChordType::new(&[5. / 4., 3. / 2., 15. / 8.])),
+    ("Minor 7th", ChordType::new(&[6. / 5., 3. / 2., 9. / 5.])),
+    ("Dominant 7th", ChordType::new(&[5. / 4., 3. / 2., 9. / 5.])),
 ];
 
 fn hash(x: u64) -> u64 {
