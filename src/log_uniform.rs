@@ -1,6 +1,7 @@
 use rand::{prelude::Distribution, Rng};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogUniform {
     min: f32,
     max: f32,

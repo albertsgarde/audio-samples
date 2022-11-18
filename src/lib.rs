@@ -13,6 +13,8 @@ pub mod log_uniform;
 pub mod parameters;
 pub use audio::Audio;
 use chord::ChordType;
+use rand::prelude::Distribution;
+use serde::{Deserialize, Serialize};
 
 const FREQUENCY_MAP_RANGE: (f32, f32) = (20., 20000.);
 const A4_FREQUENCY: f32 = 440.0;
@@ -29,6 +31,28 @@ pub const CHORD_TYPES: &[(&str, ChordType)] = &[
     ("Minor 7th", ChordType::new(&[6. / 5., 3. / 2., 9. / 5.])),
     ("Dominant 7th", ChordType::new(&[5. / 4., 3. / 2., 9. / 5.])),
 ];
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+pub struct Uniform {
+    min: f32,
+    max: f32,
+}
+
+impl Uniform {
+    pub fn new(min: f32, max: f32) -> Self {
+        Self { min, max }
+    }
+
+    pub fn new_inclusive(min: f32, max: f32) -> Self {
+        Self { min, max }
+    }
+}
+
+impl Distribution<f32> for Uniform {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> f32 {
+        rand::distributions::Uniform::new(self.min, self.max).sample(rng)
+    }
+}
 
 fn hash(x: u64) -> u64 {
     let mut hasher = DefaultHasher::new();

@@ -8,8 +8,8 @@ use audio_samples::{
         effects::EffectTypeDistribution, oscillators::OscillatorTypeDistribution, DataParameters,
         OctaveParameters,
     },
+    Uniform,
 };
-use rand::distributions::Uniform;
 
 const DATA_SET_SIZE: usize = 1000;
 

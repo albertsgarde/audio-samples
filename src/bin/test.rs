@@ -9,13 +9,13 @@ use audio_samples::{
         oscillators::OscillatorTypeDistribution,
         DataParameters, DataPointParameters, OctaveParameters,
     },
-    Audio,
+    Audio, Uniform,
 };
 use flexblock_synth::modules::{
     lowpass_filter, ConvolutionFilter, Envelope, Module, ModuleTemplate, PulseOscillator,
     SawOscillator, SineOscillator, TriangleOscillator,
 };
-use rand::{distributions::Uniform, Rng, SeedableRng};
+use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 
 const SAMPLE_RATE: u32 = 44100;

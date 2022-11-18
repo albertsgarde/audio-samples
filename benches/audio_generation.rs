@@ -1,10 +1,12 @@
-use audio_samples::parameters::{
-    effects::EffectTypeDistribution, oscillators::OscillatorTypeDistribution, DataParameters,
-    OctaveParameters,
+use audio_samples::{
+    parameters::{
+        effects::EffectTypeDistribution, oscillators::OscillatorTypeDistribution, DataParameters,
+        OctaveParameters,
+    },
+    Uniform,
 };
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
 use flexblock_synth::modules::{ObjectSafeModule, PulseOscillator};
-use rand::distributions::Uniform;
 
 fn bench_parameters(c: &mut Criterion, label: &str, parameters: &DataParameters) {
     let data_point_parameters = parameters.generate(0);

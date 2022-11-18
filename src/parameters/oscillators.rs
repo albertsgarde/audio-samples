@@ -2,16 +2,17 @@ use flexblock_synth::modules::{
     Module, NoiseOscillator, PulseOscillator, RandomWalk, SawOscillator, SineOscillator,
     TriangleOscillator,
 };
-use rand::{distributions::Uniform, prelude::Distribution, Rng, SeedableRng};
+use rand::{prelude::Distribution, Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
+use serde::{Deserialize, Serialize};
 
-use crate::log_uniform::LogUniform;
+use crate::{log_uniform::LogUniform, Uniform};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OscillatorTypeDistribution {
     Sine,
     Saw,
-    Pulse(Uniform<f32>),
+    Pulse(Uniform),
     Triangle,
     Noise,
 }
@@ -42,7 +43,7 @@ impl Distribution<OscillatorType> for OscillatorTypeDistribution {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OscillatorDistribution {
     oscillator_type_distribution: OscillatorTypeDistribution,
     probability: f64,

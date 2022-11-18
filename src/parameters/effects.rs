@@ -1,9 +1,10 @@
 use float_ord::FloatOrd;
 use rand::{prelude::Distribution, Rng};
+use serde::{Deserialize, Serialize};
 
 use crate::log_uniform::LogUniform;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EffectTypeDistribution {
     Distortion(LogUniform),
     Normalize,
@@ -30,7 +31,7 @@ impl Distribution<EffectParameters> for EffectTypeDistribution {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EffectDistribution {
     effect_type_distribution: EffectTypeDistribution,
     probability: f64,

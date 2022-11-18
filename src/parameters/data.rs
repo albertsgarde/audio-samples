@@ -1,10 +1,6 @@
-use rand::{
-    distributions::{Standard, Uniform},
-    prelude::Distribution,
-    seq::SliceRandom,
-    Rng, SeedableRng,
-};
+use rand::{distributions::Standard, prelude::Distribution, seq::SliceRandom, Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     audio::AudioGenerationError,
@@ -14,11 +10,12 @@ use crate::{
     parameters::oscillators::{
         OscillatorDistribution, OscillatorParameters, OscillatorTypeDistribution,
     },
+    Uniform,
 };
 
 use super::effects::{EffectDistribution, EffectParameters, EffectTypeDistribution};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct OctaveParameters {
     add_root_octave_probability: f64,
     add_other_octave_probability: f64,
@@ -118,10 +115,10 @@ impl OctaveParameters {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataParameters {
     sample_rate: u32,
-    frequency_distribution: Uniform<f32>,
+    frequency_distribution: Uniform,
     frequency_std_dev_distribution: LogUniform,
     possible_chords: Vec<u32>,
     octave_parameters: OctaveParameters,
