@@ -21,8 +21,8 @@ use rand_pcg::Pcg64Mcg;
 const SAMPLE_RATE: u32 = 44100;
 const SEED: u64 = 0;
 const DATA_POINT_LENGTH: u64 = SAMPLE_RATE as u64 * 5;
-const MIN_FREQUENCY: f32 = 200.0;
-const MAX_FREQUENCY: f32 = 800.0;
+const MIN_FREQUENCY: f32 = 50.0;
+const MAX_FREQUENCY: f32 = 100.0;
 
 fn main() -> Result<()> {
     let octave_parameters = OctaveParameters::new(0.5, 0.3, 90., 10_000.);

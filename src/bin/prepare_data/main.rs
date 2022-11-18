@@ -85,6 +85,7 @@ fn main() -> Result<()> {
             let label = DataPointLabel {
                 sample_rate,
                 base_frequency: Some(base_frequency),
+                frequencies: None,
                 note: Some(audio_samples::note_number_to_note(
                     audio_samples::frequency_to_note_number(base_frequency),
                 )),
