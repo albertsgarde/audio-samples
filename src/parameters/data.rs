@@ -1,4 +1,4 @@
-use std::{fs, path::Path, rc::Rc};
+use std::{fs, path::Path, sync::Arc};
 
 use rand::{distributions::Standard, prelude::Distribution, seq::SliceRandom, Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
@@ -185,7 +185,7 @@ pub struct DataParameters {
     octave_parameters: OctaveParameters,
     oscillators: Vec<OscillatorDistribution>,
     effects: Vec<EffectDistribution>,
-    wave_forms: Rc<WaveForms>,
+    wave_forms: Arc<WaveForms>,
     num_samples: u64,
     seed_offset: u64,
 }
@@ -236,7 +236,7 @@ impl DataParameters {
             frequency_std_dev_distribution: LogUniform::from_tuple(frequency_std_dev_range),
             possible_chords,
             octave_parameters,
-            wave_forms: Rc::new(wave_forms),
+            wave_forms: Arc::new(wave_forms),
             oscillators: vec![],
             effects: vec![],
             num_samples,
@@ -307,7 +307,7 @@ pub struct DataPointParameters {
     pub frequencies: Vec<f32>,
     pub oscillators: Vec<OscillatorParameters>,
     pub effects: Vec<EffectParameters>,
-    pub wave_forms: Rc<WaveForms>,
+    pub wave_forms: Arc<WaveForms>,
     pub num_samples: u64,
 }
 
