@@ -33,12 +33,30 @@ pub const CHORD_TYPES: &[(&str, ChordType)] = &[
 ];
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-pub struct Uniform {
+pub struct UniformI {
+    min: usize,
+    max: usize,
+}
+
+impl UniformI {
+    pub fn new(min: usize, max: usize) -> Self {
+        Self { min, max }
+    }
+}
+
+impl Distribution<usize> for UniformI {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> usize {
+        rand::distributions::Uniform::new(self.min, self.max).sample(rng)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+pub struct UniformF {
     min: f32,
     max: f32,
 }
 
-impl Uniform {
+impl UniformF {
     pub fn new(min: f32, max: f32) -> Self {
         Self { min, max }
     }
@@ -48,7 +66,7 @@ impl Uniform {
     }
 }
 
-impl Distribution<f32> for Uniform {
+impl Distribution<f32> for UniformF {
     fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> f32 {
         rand::distributions::Uniform::new(self.min, self.max).sample(rng)
     }

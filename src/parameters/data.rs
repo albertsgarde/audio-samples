@@ -1,3 +1,5 @@
+use std::{fs, path::Path, rc::Rc};
+
 use rand::{distributions::Standard, prelude::Distribution, seq::SliceRandom, Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 use serde::{Deserialize, Serialize};
@@ -10,7 +12,7 @@ use crate::{
     parameters::oscillators::{
         OscillatorDistribution, OscillatorParameters, OscillatorTypeDistribution,
     },
-    Uniform,
+    Audio, UniformF,
 };
 
 use super::effects::{EffectDistribution, EffectParameters, EffectTypeDistribution};
@@ -115,15 +117,75 @@ impl OctaveParameters {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct WaveForms {
+    wave_forms: Vec<Vec<f32>>,
+}
+
+impl WaveForms {
+    pub fn new() -> Self {
+        Self {
+            wave_forms: Vec::new(),
+        }
+    }
+
+    fn add(mut self, wave_form: Vec<f32>) -> Self {
+        assert!(
+            !wave_form.is_empty(),
+            "Wave form must have at least one point."
+        );
+        assert!(
+            wave_form.iter().all(|&x| x.is_finite()),
+            "Wave form must be finite and non-NaN."
+        );
+        self.wave_forms.push(wave_form);
+        self
+    }
+
+    pub fn load_and_add<P>(self, path: P) -> Self
+    where
+        P: AsRef<Path>,
+    {
+        let audio = Audio::from_wav(path).expect("Could not load audio file.");
+        let wave_form = audio.samples;
+        self.add(wave_form)
+    }
+
+    pub fn load_dir_and_add<P>(mut self, path: P) -> Self
+    where
+        P: AsRef<Path>,
+    {
+        for entry in fs::read_dir(path).expect("Could not read directory.") {
+            let entry = entry.expect("Could not read directory entry.");
+            let path = entry.path();
+            if path.extension().map(|ext| ext == "wav").unwrap_or(false) {
+                self = self.load_and_add(path);
+            }
+        }
+        self
+    }
+
+    pub fn get(&self, index: usize) -> &[f32] {
+        &self.wave_forms[index]
+    }
+}
+
+impl Default for WaveForms {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataParameters {
     sample_rate: u32,
-    frequency_distribution: Uniform,
+    frequency_distribution: UniformF,
     frequency_std_dev_distribution: LogUniform,
     possible_chords: Vec<u32>,
     octave_parameters: OctaveParameters,
     oscillators: Vec<OscillatorDistribution>,
     effects: Vec<EffectDistribution>,
+    wave_forms: Rc<WaveForms>,
     num_samples: u64,
     seed_offset: u64,
 }
@@ -135,6 +197,7 @@ impl DataParameters {
         frequency_std_dev_range: (f32, f32),
         possible_chords: A,
         octave_parameters: OctaveParameters,
+        wave_forms: WaveForms,
         num_samples: u64,
     ) -> Self
     where
@@ -169,10 +232,11 @@ impl DataParameters {
         let max_frequency_map = crate::frequency_to_map(frequency_range.1);
         Self {
             sample_rate,
-            frequency_distribution: Uniform::new(min_frequency_map, max_frequency_map),
+            frequency_distribution: UniformF::new(min_frequency_map, max_frequency_map),
             frequency_std_dev_distribution: LogUniform::from_tuple(frequency_std_dev_range),
             possible_chords,
             octave_parameters,
+            wave_forms: Rc::new(wave_forms),
             oscillators: vec![],
             effects: vec![],
             num_samples,
@@ -243,6 +307,7 @@ pub struct DataPointParameters {
     pub frequencies: Vec<f32>,
     pub oscillators: Vec<OscillatorParameters>,
     pub effects: Vec<EffectParameters>,
+    pub wave_forms: Rc<WaveForms>,
     pub num_samples: u64,
 }
 
@@ -299,6 +364,7 @@ impl DataPointParameters {
                 .iter()
                 .flat_map(|effect_distribution| effect_distribution.sample(&mut rng))
                 .collect(),
+            wave_forms: data_parameters.wave_forms.clone(),
             num_samples: data_parameters.num_samples,
         }
     }

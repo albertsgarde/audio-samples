@@ -1,9 +1,9 @@
 use audio_samples::{
     parameters::{
         effects::EffectTypeDistribution, oscillators::OscillatorTypeDistribution, DataParameters,
-        OctaveParameters,
+        OctaveParameters, WaveForms,
     },
-    Uniform,
+    UniformF,
 };
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
 use flexblock_synth::modules::{ObjectSafeModule, PulseOscillator};
@@ -19,10 +19,25 @@ fn bench_parameters(c: &mut Criterion, label: &str, parameters: &DataParameters)
 
 pub fn bench(c: &mut Criterion) {
     let octave_parameters = OctaveParameters::new(0.5, 0.3, 90., 10_000.);
-    let single_note_parameters =
-        DataParameters::new(44100, (50., 2000.), (0.5, 3.), [0], octave_parameters, 256);
-    let large_chord_parameters =
-        DataParameters::new(44100, (50., 2000.), (0.5, 3.), [5], octave_parameters, 256);
+    let wave_forms = WaveForms::new().load_dir_and_add("assets/custom_oscillators");
+    let single_note_parameters = DataParameters::new(
+        44100,
+        (50., 2000.),
+        (0.5, 3.),
+        [0],
+        octave_parameters,
+        wave_forms.clone(),
+        256,
+    );
+    let large_chord_parameters = DataParameters::new(
+        44100,
+        (50., 2000.),
+        (0.5, 3.),
+        [5],
+        octave_parameters,
+        wave_forms,
+        256,
+    );
     let parameters = [
         ("empty", single_note_parameters.clone()),
         ("empty_chord", large_chord_parameters.clone()),
@@ -64,7 +79,7 @@ pub fn bench(c: &mut Criterion) {
                 .with_oscillator(OscillatorTypeDistribution::Saw, 1., (0.1, 0.2))
                 .with_oscillator(OscillatorTypeDistribution::Triangle, 1., (0.1, 0.2))
                 .with_oscillator(
-                    OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                    OscillatorTypeDistribution::Pulse(UniformF::new(0.1, 0.9)),
                     1.,
                     (0.1, 0.2),
                 )
@@ -78,7 +93,7 @@ pub fn bench(c: &mut Criterion) {
                 .with_oscillator(OscillatorTypeDistribution::Saw, 1., (0.1, 0.2))
                 .with_oscillator(OscillatorTypeDistribution::Triangle, 1., (0.1, 0.2))
                 .with_oscillator(
-                    OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                    OscillatorTypeDistribution::Pulse(UniformF::new(0.1, 0.9)),
                     1.,
                     (0.1, 0.2),
                 )
@@ -91,7 +106,7 @@ pub fn bench(c: &mut Criterion) {
                 .with_oscillator(OscillatorTypeDistribution::Saw, 1., (0.1, 0.2))
                 .with_oscillator(OscillatorTypeDistribution::Triangle, 1., (0.1, 0.2))
                 .with_oscillator(
-                    OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                    OscillatorTypeDistribution::Pulse(UniformF::new(0.1, 0.9)),
                     1.,
                     (0.1, 0.2),
                 )
@@ -105,7 +120,7 @@ pub fn bench(c: &mut Criterion) {
                 .with_oscillator(OscillatorTypeDistribution::Saw, 1., (0.1, 0.2))
                 .with_oscillator(OscillatorTypeDistribution::Triangle, 1., (0.1, 0.2))
                 .with_oscillator(
-                    OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                    OscillatorTypeDistribution::Pulse(UniformF::new(0.1, 0.9)),
                     1.,
                     (0.1, 0.2),
                 )
@@ -120,8 +135,16 @@ pub fn bench(c: &mut Criterion) {
 
 pub fn oscillators(c: &mut Criterion) {
     let octave_parameters = OctaveParameters::new(0.5, 0.3, 90., 10_000.);
-    let base_parameters =
-        DataParameters::new(44100, (50., 2000.), (0.5, 3.), [0], octave_parameters, 256);
+    let wave_forms = WaveForms::new().load_dir_and_add("assets/custom_oscillators");
+    let base_parameters = DataParameters::new(
+        44100,
+        (50., 2000.),
+        (0.5, 3.),
+        [0],
+        octave_parameters,
+        wave_forms,
+        256,
+    );
 
     let parameters = [
         (
@@ -151,7 +174,7 @@ pub fn oscillators(c: &mut Criterion) {
         (
             "osc_pulse",
             base_parameters.clone().with_oscillator(
-                OscillatorTypeDistribution::Pulse(Uniform::new(0.1, 0.9)),
+                OscillatorTypeDistribution::Pulse(UniformF::new(0.1, 0.9)),
                 1.,
                 (0.5, 0.7),
             ),

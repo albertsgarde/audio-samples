@@ -1,19 +1,22 @@
 use flexblock_synth::modules::{
-    Module, NoiseOscillator, PulseOscillator, RandomWalk, SawOscillator, SineOscillator,
-    TriangleOscillator,
+    CustomOscillator, Module, NoiseOscillator, PulseOscillator, RandomWalk, SawOscillator,
+    SineOscillator, TriangleOscillator,
 };
 use rand::{prelude::Distribution, Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 use serde::{Deserialize, Serialize};
 
-use crate::{log_uniform::LogUniform, Uniform};
+use crate::{log_uniform::LogUniform, UniformF, UniformI};
+
+use super::WaveForms;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OscillatorTypeDistribution {
     Sine,
     Saw,
-    Pulse(Uniform),
+    Pulse(UniformF),
     Triangle,
+    Custom(UniformI),
     Noise,
 }
 
@@ -24,6 +27,7 @@ impl OscillatorTypeDistribution {
             OscillatorTypeDistribution::Saw => true,
             OscillatorTypeDistribution::Pulse(_) => true,
             OscillatorTypeDistribution::Triangle => true,
+            OscillatorTypeDistribution::Custom(_) => true,
             OscillatorTypeDistribution::Noise => false,
         }
     }
@@ -38,6 +42,9 @@ impl Distribution<OscillatorType> for OscillatorTypeDistribution {
                 OscillatorType::Pulse(pulse_width_distribution.sample(rng))
             }
             OscillatorTypeDistribution::Triangle => OscillatorType::Triangle,
+            OscillatorTypeDistribution::Custom(wave_form_distr) => {
+                OscillatorType::Custom(wave_form_distr.sample(rng), rng.next_u64())
+            }
             OscillatorTypeDistribution::Noise => OscillatorType::Noise(rng.next_u64()),
         }
     }
@@ -102,6 +109,7 @@ pub enum OscillatorType {
     Saw,
     Pulse(f32),
     Triangle,
+    Custom(usize, u64),
     // Contains the seed for the noise generator.
     Noise(u64),
 }
@@ -124,6 +132,7 @@ impl OscillatorParameters {
         frequency: f32,
         frequency_std_dev: f32,
         frequency_random_walk_seed: u64,
+        wave_forms: &WaveForms,
         sample_rate: u32,
         buffer: &mut [f32],
     ) {
@@ -158,6 +167,17 @@ impl OscillatorParameters {
                 amplitude,
                 buffer,
             ),
+            OscillatorType::Custom(wave_form, seed) => Self::write_oscillator(
+                CustomOscillator::new(
+                    frequency_module,
+                    wave_forms.get(wave_form),
+                    Pcg64Mcg::seed_from_u64(seed).gen_range(0f32..1.),
+                    sample_rate,
+                )
+                .module(),
+                amplitude,
+                buffer,
+            ),
             OscillatorType::Noise(seed) => Self::write_oscillator(
                 NoiseOscillator::new(Pcg64Mcg::seed_from_u64(seed)).module(),
                 amplitude,
@@ -177,6 +197,7 @@ impl OscillatorParameters {
                 OscillatorType::Saw => true,
                 OscillatorType::Pulse(_) => true,
                 OscillatorType::Triangle => true,
+                OscillatorType::Custom(_, _) => true,
                 OscillatorType::Noise(_) => false,
             }
     }

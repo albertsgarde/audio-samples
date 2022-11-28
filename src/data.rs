@@ -29,6 +29,7 @@ impl DataPoint {
                     frequency,
                     parameters.frequency_std_dev,
                     rng.sample(distributions::Standard),
+                    parameters.wave_forms.as_ref(),
                     parameters.sample_rate,
                     &mut samples,
                 );

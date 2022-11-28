@@ -7,9 +7,9 @@ use audio_samples::{
     parameters::{
         effects::{EffectDistribution, EffectTypeDistribution},
         oscillators::OscillatorTypeDistribution,
-        DataParameters, DataPointParameters, OctaveParameters,
+        DataParameters, DataPointParameters, OctaveParameters, WaveForms,
     },
-    Audio, Uniform,
+    Audio, UniformF, UniformI,
 };
 use flexblock_synth::modules::{
     lowpass_filter, ConvolutionFilter, Envelope, Module, ModuleTemplate, PulseOscillator,
@@ -26,22 +26,29 @@ const MAX_FREQUENCY: f32 = 100.0;
 
 fn main() -> Result<()> {
     let octave_parameters = OctaveParameters::new(0.5, 0.3, 90., 10_000.);
+    let wave_forms = WaveForms::new().load_dir_and_add("assets/custom_oscillators");
     let parameters = DataParameters::new(
         SAMPLE_RATE,
         (MIN_FREQUENCY, MAX_FREQUENCY),
         (0.5, 3.),
         [0, 1, 2, 3, 4, 5, 6],
         octave_parameters,
+        wave_forms,
         DATA_POINT_LENGTH,
     )
-    .with_oscillator(OscillatorTypeDistribution::Sine, 0.5, (0.1, 0.2))
-    .with_oscillator(OscillatorTypeDistribution::Saw, 0.5, (0.1, 0.2))
+    .with_oscillator(OscillatorTypeDistribution::Sine, 0.5, (0.1, 0.15))
+    .with_oscillator(OscillatorTypeDistribution::Saw, 0.5, (0.1, 0.15))
     .with_oscillator(
-        OscillatorTypeDistribution::Pulse(Uniform::new_inclusive(0.1, 0.9)),
+        OscillatorTypeDistribution::Pulse(UniformF::new_inclusive(0.1, 0.9)),
         0.5,
-        (0.1, 0.2),
+        (0.1, 0.15),
     )
-    .with_oscillator(OscillatorTypeDistribution::Triangle, 0.5, (0.1, 0.2))
+    .with_oscillator(OscillatorTypeDistribution::Triangle, 0.5, (0.1, 0.15))
+    .with_oscillator(
+        OscillatorTypeDistribution::Custom(UniformI::new(0, 1)),
+        0.1,
+        (0.1, 0.15),
+    )
     .with_oscillator(OscillatorTypeDistribution::Noise, 0.5, (0.01, 0.04))
     .with_effect(
         EffectTypeDistribution::Distortion(LogUniform::from_tuple((0.1, 20.))),
