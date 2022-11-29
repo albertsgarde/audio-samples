@@ -168,6 +168,10 @@ impl WaveForms {
     pub fn get(&self, index: usize) -> &[f32] {
         &self.wave_forms[index]
     }
+
+    pub fn num_wave_forms(&self) -> usize {
+        self.wave_forms.len()
+    }
 }
 
 impl Default for WaveForms {
@@ -242,6 +246,10 @@ impl DataParameters {
             num_samples,
             seed_offset: hash(hash(0)),
         }
+    }
+
+    pub fn num_wave_forms(&self) -> usize {
+        self.wave_forms.num_wave_forms()
     }
 
     pub fn with_seed_offset(mut self, seed_offset: u64) -> Self {
